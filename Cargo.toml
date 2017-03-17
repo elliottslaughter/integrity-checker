@@ -1,0 +1,11 @@
+[package]
+name = "integrity-checker"
+version = "0.1.0"
+authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
+
+[dependencies]
+clap = "2.21"
+walkdir = "1"
+sha2 = "0.4"
+sha3 = "0.4"
+blake2 = "0.4"
