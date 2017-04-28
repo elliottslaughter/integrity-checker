@@ -93,12 +93,18 @@ Here are some formats under consideration:
     originally intended as formats to encode messages for transfer
     over the wire, but can also be used to describe data at rest.
 
-    The advantage of JSON is that it is essentially ubiquitous: every
-    language can be expected to have a mature JSON parser
-    available. Also, because the format is self-describing, no prior
-    knowledge of the format is required. Even better, the format is
-    human-readable, so you don't even need to decode it to understand
-    what you are looking at. The main disadvantages of JSON are:
+    A key advantage of these formats is that they are well-supported
+    by [Serde](https://github.com/serde-rs/serde) making it easy to
+    produce robust and high-quality serializers and deserializers for
+    any of these formats.
+
+    The advantage of JSON specifically is that it is essentially
+    ubiquitous: every language can be expected to have a mature JSON
+    parser available. Also, because the format is self-describing, no
+    prior knowledge of the format is required. Even better, the format
+    is human-readable, so you don't even need to decode it to
+    understand what you are looking at. The main disadvantages of JSON
+    are:
 
       1. The cost of being human-readable and self-describing is
          compactness. The field names of objects will be repeated, and
