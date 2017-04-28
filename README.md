@@ -33,6 +33,10 @@ Here are a couple sample use cases:
     change often are in fact not changing. (Note: For this to be
     useful, the tool has to be very good at summarizing differences.)
 
+## Format
+
+See the [format description](FORMAT.md).
+
 ## FAQ
 
   * Isn't this better served by existing tools? ZFS, Tarsnap,
