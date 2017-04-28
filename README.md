@@ -9,8 +9,13 @@ is to do the following:
     timestamps, etc.) of all. The database itself should of course be
     checksummed as well.
 
-  * Given two databases, the tool should iterate the entries and print
-    a *helpful* summary of the differences between them.
+  * Given two databases, or a database and a directory, the tool
+    should iterate the entries and print a *helpful* summary of the
+    differences between them. For example, the tool should highlight
+    suspicious patterns, such as files which got truncated (had
+    non-zero size, and now have zero size) or have other patterns that
+    could indicate corruption (e.g. the presence of NUL bytes, if the
+    file originally had none).
 
 Here are a couple sample use cases:
 
