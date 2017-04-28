@@ -98,7 +98,7 @@ Here are some formats under consideration:
     produce robust and high-quality serializers and deserializers for
     any of these formats.
 
-    The advantage of JSON specifically is that it is essentially
+    The advantage of JSON specifically is that it is
     ubiquitous: every language can be expected to have a mature JSON
     parser available. Also, because the format is self-describing, no
     prior knowledge of the format is required. Even better, the format
