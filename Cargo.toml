@@ -5,7 +5,10 @@ authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 
 [dependencies]
 clap = "2.21"
+generic-array = "0.7"
 ignore = "0.1.9"
+
+digest = "0.5"
 sha2 = "0.5"
 sha3 = "0.5"
 blake2 = "0.5"
