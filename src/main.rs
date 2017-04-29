@@ -1,5 +1,5 @@
 extern crate clap;
-extern crate walkdir;
+extern crate ignore;
 extern crate sha2;
 
 use std::ffi::OsString;
@@ -8,7 +8,25 @@ use std::io::Read;
 use std::path::Path;
 
 use sha2::Digest;
-use walkdir::WalkDir;
+use ignore::WalkBuilder;
+
+#[derive(Debug)]
+enum Error {
+    Io(std::io::Error),
+    Ignore(ignore::Error),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Error {
+        Error::Io(err)
+    }
+}
+
+impl From<ignore::Error> for Error {
+    fn from(err: ignore::Error) -> Error {
+        Error::Ignore(err)
+    }
+}
 
 fn parse_args() -> OsString {
     let matches = clap::App::new("Integrity Checker")
@@ -37,10 +55,10 @@ fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error> {
 
 // FIXME: I'm throwing away the extra info in walkdir::Error here. But
 // walkdir::Error doesn't provide a From or any way to construct one.
-fn walk_directory<P: AsRef<Path>>(path: P) -> Result<(), std::io::Error> {
-    for entry in WalkDir::new(path) {
+fn walk_directory<P: AsRef<Path>>(path: P) -> Result<(), Error> {
+    for entry in WalkBuilder::new(path).build() {
         let entry = entry?;
-        if entry.file_type().is_file() {
+        if entry.file_type().map_or(false, |t| t.is_file()) {
             let hash = compute_hash(entry.path())?;
             println!("{}  {}", hash, entry.path().display());
         }
