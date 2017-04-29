@@ -53,8 +53,6 @@ fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error> {
     Ok(hasher.result().map(|b| format!("{:02x}", b)).join(""))
 }
 
-// FIXME: I'm throwing away the extra info in walkdir::Error here. But
-// walkdir::Error doesn't provide a From or any way to construct one.
 fn walk_directory<P: AsRef<Path>>(path: P) -> Result<(), Error> {
     for entry in WalkBuilder::new(path).build() {
         let entry = entry?;
