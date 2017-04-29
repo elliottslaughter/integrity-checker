@@ -3,6 +3,9 @@ extern crate ignore;
 
 #[macro_use]
 extern crate serde_derive;
+
+extern crate serde_bytes;
+extern crate serde_cbor;
 extern crate serde_json;
 
 extern crate digest;
@@ -38,7 +41,7 @@ struct HashSums {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-struct HashSum(Vec<u8>);
+struct HashSum(#[serde(with = "serde_bytes")] Vec<u8>);
 
 fn parse_args() -> OsString {
     let matches = clap::App::new("Integrity Checker")
@@ -119,4 +122,11 @@ fn main() {
     let database = build_database(&path).unwrap();
     let json = serde_json::to_string(&database).unwrap();
     println!("{}", json);
+
+    let cbor = serde_cbor::to_vec(&database).unwrap();
+    let cbor_bytes: Vec<_> = cbor.iter().map(|b| format!("{:02x}", b)).collect();
+    println!("{}", cbor_bytes.join(""));
+
+    println!("JSON bytes: {}", json.len());
+    println!("CBOR bytes: {}", cbor.len());
 }
