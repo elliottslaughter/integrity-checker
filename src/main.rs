@@ -116,7 +116,7 @@ impl std::fmt::Display for Database {
                     let hash: Vec<_> = hashes.sha2.0.iter().map(
                         |b| format!("{:02x}", b)).collect();
                     writeln!(f, "{} {}", hash.join(""), Path::new(path).display())?
-                    }
+                }
             }
         }
         Ok(())
