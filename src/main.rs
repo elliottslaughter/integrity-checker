@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 use std::default::Default;
 use std::ffi::OsString;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use ignore::WalkBuilder;
@@ -43,14 +43,19 @@ struct HashSums {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct HashSum(#[serde(with = "serde_bytes")] Vec<u8>);
 
-fn parse_args() -> OsString {
+fn parse_args() -> (OsString, OsString) {
     let matches = clap::App::new("Integrity Checker")
+        .arg(clap::Arg::with_name("database")
+             .help("Path to integrity database")
+             .required(true)
+             .index(1))
         .arg(clap::Arg::with_name("path")
              .help("Path to file or directory to check integrity of")
              .required(true)
-             .index(1))
+             .index(2))
         .get_matches();
-    matches.value_of_os("path").unwrap().to_owned()
+    (matches.value_of_os("database").unwrap().to_owned(),
+     matches.value_of_os("path").unwrap().to_owned())
 }
 
 #[derive(Default)]
@@ -118,14 +123,25 @@ impl std::fmt::Display for Database {
 }
 
 fn main() {
-    let path = parse_args();
-    let database = build_database(&path).unwrap();
+    let (db_path, dir_path) = parse_args();
+    let database = build_database(&dir_path).unwrap();
     let json = serde_json::to_string(&database).unwrap();
-    println!("{}", json);
+
+    {
+        let mut json_path = PathBuf::from(&db_path);
+        json_path.set_extension("json");
+        let mut json_f = File::create(json_path).unwrap();
+        write!(json_f, "{}", json).unwrap();
+    }
 
     let cbor = serde_cbor::to_vec(&database).unwrap();
-    let cbor_bytes: Vec<_> = cbor.iter().map(|b| format!("{:02x}", b)).collect();
-    println!("{}", cbor_bytes.join(""));
+
+    {
+        let mut cbor_path = PathBuf::from(&db_path);
+        cbor_path.set_extension("cbor");
+        let mut cbor_f = File::create(cbor_path).unwrap();
+        cbor_f.write_all(cbor.as_slice()).unwrap();
+    }
 
     println!("JSON bytes: {}", json.len());
     println!("CBOR bytes: {}", cbor.len());
