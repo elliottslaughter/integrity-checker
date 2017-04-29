@@ -2,6 +2,8 @@ extern crate clap;
 extern crate ignore;
 extern crate sha2;
 
+extern crate integrity_checker;
+
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::Read;
@@ -10,23 +12,7 @@ use std::path::Path;
 use sha2::Digest;
 use ignore::WalkBuilder;
 
-#[derive(Debug)]
-enum Error {
-    Io(std::io::Error),
-    Ignore(ignore::Error),
-}
-
-impl From<std::io::Error> for Error {
-    fn from(err: std::io::Error) -> Error {
-        Error::Io(err)
-    }
-}
-
-impl From<ignore::Error> for Error {
-    fn from(err: ignore::Error) -> Error {
-        Error::Ignore(err)
-    }
-}
+use integrity_checker::error;
 
 fn parse_args() -> OsString {
     let matches = clap::App::new("Integrity Checker")
@@ -38,7 +24,7 @@ fn parse_args() -> OsString {
     matches.value_of_os("path").unwrap().to_owned()
 }
 
-fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error> {
+fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, error::Error> {
     let mut f = File::open(path)?;
 
     let mut hasher = sha2::Sha256::default();
@@ -53,7 +39,7 @@ fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error> {
     Ok(hasher.result().map(|b| format!("{:02x}", b)).join(""))
 }
 
-fn walk_directory<P: AsRef<Path>>(path: P) -> Result<(), Error> {
+fn walk_directory<P: AsRef<Path>>(path: P) -> Result<(), error::Error> {
     for entry in WalkBuilder::new(path).build() {
         let entry = entry?;
         if entry.file_type().map_or(false, |t| t.is_file()) {
