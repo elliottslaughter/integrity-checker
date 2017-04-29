@@ -5,8 +5,11 @@ authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 
 [dependencies]
 clap = "2.21"
-generic-array = "0.7"
 ignore = "0.1.9"
+
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
 
 digest = "0.5"
 sha2 = "0.5"

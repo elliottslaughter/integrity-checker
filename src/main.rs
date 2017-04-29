@@ -1,6 +1,9 @@
 extern crate clap;
-extern crate generic_array;
 extern crate ignore;
+
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
 
 extern crate digest;
 extern crate sha2;
@@ -13,30 +16,29 @@ use std::default::Default;
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-use generic_array::{ArrayLength, GenericArray};
 use ignore::WalkBuilder;
 use digest::Digest;
 
 use integrity_checker::error;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-struct Database(BTreeMap<OsString, Entry>);
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+struct Database(BTreeMap<PathBuf, Entry>);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 enum Entry {
     File(HashSums),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 struct HashSums {
-    sha2: HashSum<<sha2::Sha256 as Digest>::OutputSize>,
-    sha3: HashSum<<sha3::Sha3_256 as Digest>::OutputSize>,
+    sha2: HashSum,
+    sha3: HashSum,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct HashSum<T: ArrayLength<u8>>(GenericArray<u8, T>);
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct HashSum(Vec<u8>);
 
 fn parse_args() -> OsString {
     let matches = clap::App::new("Integrity Checker")
@@ -48,18 +50,21 @@ fn parse_args() -> OsString {
     matches.value_of_os("path").unwrap().to_owned()
 }
 
-#[derive(Clone, Default)]
-struct Hashers(sha2::Sha256, sha3::Sha3_256);
+#[derive(Default)]
+struct Hashers {
+    sha2: sha2::Sha256,
+    sha3: sha3::Sha3_256,
+}
 
 impl Hashers {
     fn input(&mut self, input: &[u8]) {
-        self.0.input(input);
-        self.1.input(input);
+        self.sha2.input(input);
+        self.sha3.input(input);
     }
     fn result(self) -> HashSums {
         HashSums {
-            sha2: HashSum(self.0.result()),
-            sha3: HashSum(self.1.result()),
+            sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
+            sha3: HashSum(Vec::from(self.sha3.result().as_slice())),
         }
     }
 }
@@ -86,10 +91,9 @@ fn build_database<P: AsRef<Path>>(path: P) -> Result<Database, error::Error> {
     for entry in WalkBuilder::new(path).build() {
         let entry = entry?;
         if entry.file_type().map_or(false, |t| t.is_file()) {
-            let path = entry.path().as_os_str().to_owned();
             let hashes = compute_hashes(entry.path())?;
             let result = Entry::File(hashes);
-            database.0.insert(path, result);
+            database.0.insert(entry.path().to_owned(), result);
         }
     }
     Ok(database)
@@ -99,10 +103,11 @@ impl std::fmt::Display for Database {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for (path, entry) in self.0.iter() {
             match entry {
-                &Entry::File(ref hashes) => writeln!(
-                    f, "{} {}",
-                    hashes.sha2.0.map(|b| format!("{:02x}", b)).join(""),
-                    Path::new(path).display())?
+                &Entry::File(ref hashes) => {
+                    let hash: Vec<_> = hashes.sha2.0.iter().map(
+                        |b| format!("{:02x}", b)).collect();
+                    writeln!(f, "{} {}", hash.join(""), Path::new(path).display())?
+                    }
             }
         }
         Ok(())
@@ -112,5 +117,6 @@ impl std::fmt::Display for Database {
 fn main() {
     let path = parse_args();
     let database = build_database(&path).unwrap();
-    println!("{}", database);
+    let json = serde_json::to_string(&database).unwrap();
+    println!("{}", json);
 }
