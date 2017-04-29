@@ -70,7 +70,14 @@ where
 }
 
 impl Database {
-    pub fn build<P: AsRef<Path>>(path: P) -> Result<Database, error::Error> {
+    fn insert(&mut self, path: PathBuf, entry: Entry) {
+        self.0.insert(path, entry);
+    }
+
+    pub fn build<P>(path: P) -> Result<Database, error::Error>
+    where
+        P: AsRef<Path>
+    {
         let mut database = Database::default();
         for entry in WalkBuilder::new(&path).build() {
             let entry = entry?;
@@ -78,7 +85,7 @@ impl Database {
                 let hashes = compute_hashes(entry.path())?;
                 let result = Entry::File(hashes);
                 let short_path = entry.path().strip_prefix(&path)?;
-                database.0.insert(short_path.to_owned(), result);
+                database.insert(short_path.to_owned(), result);
             }
         }
         Ok(database)
