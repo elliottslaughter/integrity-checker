@@ -23,7 +23,7 @@ fn parse_args() -> OsString {
 fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error> {
     let mut f = File::open(path)?;
 
-    let mut hasher = sha2::Sha256::new();
+    let mut hasher = sha2::Sha256::default();
 
     let mut buffer = [0; 4096];
 
@@ -32,7 +32,7 @@ fn compute_hash<P: AsRef<Path>>(path: P) -> Result<String, std::io::Error> {
         if n == 0 { break }
         hasher.input(&buffer[0..n]);
     }
-    Ok(hasher.result().map(|b| format!("{:x}", b)).join(""))
+    Ok(hasher.result().map(|b| format!("{:02x}", b)).join(""))
 }
 
 // FIXME: I'm throwing away the extra info in walkdir::Error here. But
