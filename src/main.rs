@@ -96,12 +96,13 @@ where
 
 fn build_database<P: AsRef<Path>>(path: P) -> Result<Database, error::Error> {
     let mut database = Database::default();
-    for entry in WalkBuilder::new(path).build() {
+    for entry in WalkBuilder::new(&path).build() {
         let entry = entry?;
         if entry.file_type().map_or(false, |t| t.is_file()) {
             let hashes = compute_hashes(entry.path())?;
             let result = Entry::File(hashes);
-            database.0.insert(entry.path().to_owned(), result);
+            let short_path = entry.path().strip_prefix(&path)?;
+            database.0.insert(short_path.to_owned(), result);
         }
     }
     Ok(database)
