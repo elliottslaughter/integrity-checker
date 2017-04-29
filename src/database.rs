@@ -2,12 +2,14 @@ use std;
 use std::collections::BTreeMap;
 use std::default::Default;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 use digest::Digest;
 use ignore::WalkBuilder;
 use serde_bytes;
+use serde_cbor;
+use serde_json;
 
 use sha2;
 use sha3;
@@ -80,6 +82,26 @@ impl Database {
             }
         }
         Ok(database)
+    }
+
+    pub fn dump_json<P>(&self, path: P) -> Result<(), error::Error>
+    where
+        P: AsRef<Path>
+    {
+        let json = serde_json::to_string(self)?;
+        let mut f = File::create(path)?;
+        write!(f, "{}", json)?;
+        Ok(())
+    }
+
+    pub fn dump_cbor<P>(&self, path: P) -> Result<(), error::Error>
+    where
+        P: AsRef<Path>
+    {
+        let cbor = serde_cbor::to_vec(self)?;
+        let mut f = File::create(path)?;
+        f.write_all(cbor.as_slice())?;
+        Ok(())
     }
 }
 
