@@ -187,17 +187,21 @@ impl Database {
         self.0.insert(path, entry);
     }
 
-    pub fn build<P>(path: P) -> Result<Database, error::Error>
+    pub fn build<P>(root: P) -> Result<Database, error::Error>
     where
-        P: AsRef<Path>
+        P: AsRef<Path>,
     {
         let mut database = Database::default();
-        for entry in WalkBuilder::new(&path).build() {
+        for entry in WalkBuilder::new(&root).build() {
             let entry = entry?;
             if entry.file_type().map_or(false, |t| t.is_file()) {
                 let metrics = compute_metrics(entry.path())?;
                 let result = Entry::File(metrics);
-                let short_path = entry.path().strip_prefix(&path)?;
+                let short_path = if entry.path() == root.as_ref() {
+                    Path::new(entry.path().file_name().expect("unreachable"))
+                } else {
+                    entry.path().strip_prefix(&root)?
+                };
                 database.insert(short_path.to_owned(), result);
             }
         }
