@@ -12,6 +12,7 @@ use integrity_checker::database::Database;
 
 enum Action {
     Build { db_path: OsString, dir_path: OsString },
+    Check { db_path: OsString, dir_path: OsString },
 }
 
 fn parse_args() -> Action {
@@ -26,9 +27,23 @@ fn parse_args() -> Action {
                          .help("Path of file or directory to scan")
                          .required(true)
                          .index(2)))
+        .subcommand(clap::SubCommand::with_name("check")
+                    .about("Check an integrity database against a directory")
+                    .arg(clap::Arg::with_name("database")
+                         .help("Path of integrity database to read")
+                         .required(true)
+                         .index(1))
+                    .arg(clap::Arg::with_name("path")
+                         .help("Path of file or directory to scan")
+                         .required(true)
+                         .index(2)))
         .get_matches();
     match matches.subcommand() {
         ("build", Some(submatches)) => Action::Build {
+            db_path: submatches.value_of_os("database").unwrap().to_owned(),
+            dir_path: submatches.value_of_os("path").unwrap().to_owned(),
+        },
+        ("check", Some(submatches)) => Action::Check {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
             dir_path: submatches.value_of_os("path").unwrap().to_owned(),
         },
@@ -58,6 +73,12 @@ fn main() {
             println!("JSON bytes: {}", json.len());
             let cbor = serde_cbor::to_vec(&database).unwrap();
             println!("CBOR bytes: {}", cbor.len());
+        }
+        Action::Check { db_path, dir_path } => {
+            let mut cbor_path = PathBuf::from(&db_path);
+            cbor_path.set_extension("cbor");
+            let database = Database::load_cbor(&cbor_path).unwrap();
+            database.check(&dir_path).unwrap();
         }
     }
 }

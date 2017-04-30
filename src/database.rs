@@ -109,15 +109,15 @@ where
 {
     let mut f = File::open(path)?;
 
-    let mut hashers = Engines::default();
+    let mut engines = Engines::default();
 
     let mut buffer = [0; 4096];
     loop {
         let n = f.read(&mut buffer[..])?;
         if n == 0 { break }
-        hashers.input(&buffer[0..n]);
+        engines.input(&buffer[0..n]);
     }
-    Ok(hashers.result())
+    Ok(engines.result())
 }
 
 trait BTreeMapExt<K, V> where K: Ord, V: Default {
@@ -180,11 +180,58 @@ impl Entry {
             &mut Entry::File(_) => unreachable!()
         }
     }
+
+    fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
+        match *self {
+            Entry::Directory(ref entries) => {
+                let mut components = path.components();
+                let count = components.clone().count();
+                let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
+                let rest = components.as_path().to_owned();
+                if count > 1 {
+                    entries.get(&first).and_then(
+                        |subentry| subentry.lookup(&rest))
+                } else {
+                    entries.get(&first)
+                }
+            }
+            Entry::File(_) => unreachable!()
+        }
+    }
+}
+
+
+fn summarize<P>(path: P, expected: &Metrics, actual: &Metrics)
+where
+    P: AsRef<Path>,
+{
+    let diff = expected.size != actual.size ||
+        expected.sha2 != actual.sha2 ||
+        expected.sha3 != actual.sha3;
+    if diff {
+        let suspicious_size = expected.size > 0 && actual.size == 0;
+        let suspicious_nul = expected.nul != actual.nul;
+        let suspicious_nonascii = expected.nonascii != actual.nonascii;
+        println!("{} differs", path.as_ref().display());
+        if suspicious_size {
+            println!("  suspicious: file was truncated");
+        }
+        if suspicious_nul {
+            println!("  suspicious: original had no NUL bytes, but now does");
+        }
+        if suspicious_nonascii {
+            println!("  suspicious: original had no non-ASCII bytes, but now does");
+        }
+    }
 }
 
 impl Database {
     fn insert(&mut self, path: PathBuf, entry: Entry) {
         self.0.insert(path, entry);
+    }
+
+    fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
+        self.0.lookup(path)
     }
 
     pub fn build<P>(root: P) -> Result<Database, error::Error>
@@ -208,6 +255,41 @@ impl Database {
         Ok(database)
     }
 
+    pub fn check<P>(&self, root: P) -> Result<(), error::Error>
+    where
+        P: AsRef<Path>,
+    {
+        // FIXME: Doesn't check for missing entries
+        for entry in WalkBuilder::new(&root).build() {
+            let entry = entry?;
+            if entry.file_type().map_or(false, |t| t.is_file()) {
+                let actual = compute_metrics(entry.path())?;
+
+                let short_path = if entry.path() == root.as_ref() {
+                    Path::new(entry.path().file_name().expect("unreachable"))
+                } else {
+                    entry.path().strip_prefix(&root)?
+                };
+                let expected = self.lookup(&short_path.to_owned());
+                match expected {
+                    Some(&Entry::File(ref metrics)) => summarize(
+                        short_path, metrics, &actual),
+                    Some(&Entry::Directory(_)) => unreachable!(),
+                    None => println!("{} was created", short_path.display()),
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub fn load_json<P>(path: P) -> Result<Database, error::Error>
+    where
+        P: AsRef<Path>
+    {
+        let f = File::open(path)?;
+        Ok(serde_json::from_reader(f)?)
+    }
+
     pub fn dump_json<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
@@ -216,6 +298,14 @@ impl Database {
         let mut f = File::create(path)?;
         write!(f, "{}", json)?;
         Ok(())
+    }
+
+    pub fn load_cbor<P>(path: P) -> Result<Database, error::Error>
+    where
+        P: AsRef<Path>
+    {
+        let f = File::open(path)?;
+        Ok(serde_cbor::from_reader(f)?)
     }
 
     pub fn dump_cbor<P>(&self, path: P) -> Result<(), error::Error>
