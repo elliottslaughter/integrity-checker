@@ -130,26 +130,7 @@ where
     V: Default,
 {
     fn get_mut_default(&mut self, key: K) -> &mut V {
-        if self.contains_key(&key) {
-            match self.get_mut(&key) {
-                Some(value) => value,
-                None => unreachable!(), // Already checked that key exists
-            }
-        } else {
-            {
-                // FIXME: Would prefer to avoid the clone
-                match self.insert(key.clone(), V::default()) {
-                    Some(_) => unreachable!(), // Already checked for key
-                    None => (),
-                }
-            }
-            {
-                match self.get_mut(&key) {
-                    Some(value) => value,
-                    None => unreachable!(), // Already checked that key exists
-                }
-            }
-        }
+        self.entry(key).or_insert(V::default())
     }
 }
 
