@@ -21,7 +21,7 @@ pub struct Database(Entry);
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Entry {
     Directory(BTreeMap<PathBuf, Entry>),
-    File(HashSums),
+    File(Metrics),
 }
 
 impl Default for Entry {
@@ -31,40 +31,85 @@ impl Default for Entry {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HashSums {
+pub struct Metrics {
     sha2: HashSum,
     sha3: HashSum,
+    size: u64,      // File size
+    nul: bool,      // Does the file contain a NUL byte?
+    nonascii: bool, // Does the file contain non-ASCII bytes?
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HashSum(#[serde(with = "serde_bytes")] Vec<u8>);
 
 #[derive(Default)]
-struct Hashers {
-    sha2: sha2::Sha256,
-    sha3: sha3::Sha3_256,
+struct EngineSize(u64);
+impl EngineSize {
+    fn input(&mut self, input: &[u8]) {
+        self.0 += input.len() as u64;
+    }
+    fn result(self) -> u64 {
+        self.0
+    }
 }
 
-impl Hashers {
+#[derive(Default)]
+struct EngineNul(bool);
+impl EngineNul {
+    fn input(&mut self, input: &[u8]) {
+        self.0 = self.0 || input.iter().any(|x| *x == 0);
+    }
+    fn result(self) -> bool {
+        self.0
+    }
+}
+
+#[derive(Default)]
+struct EngineNonascii(bool);
+impl EngineNonascii {
+    fn input(&mut self, input: &[u8]) {
+        self.0 = self.0 || input.iter().any(|x| x & 0x80 != 0);
+    }
+    fn result(self) -> bool {
+        self.0
+    }
+}
+
+#[derive(Default)]
+struct Engines {
+    sha2: sha2::Sha256,
+    sha3: sha3::Sha3_256,
+    size: EngineSize,
+    nul: EngineNul,
+    nonascii: EngineNonascii,
+}
+
+impl Engines {
     fn input(&mut self, input: &[u8]) {
         self.sha2.input(input);
         self.sha3.input(input);
+        self.size.input(input);
+        self.nul.input(input);
+        self.nonascii.input(input);
     }
-    fn result(self) -> HashSums {
-        HashSums {
+    fn result(self) -> Metrics {
+        Metrics {
             sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
             sha3: HashSum(Vec::from(self.sha3.result().as_slice())),
+            size: self.size.result(),
+            nul: self.nul.result(),
+            nonascii: self.nonascii.result(),
         }
     }
 }
 
-fn compute_hashes<P>(path: P) -> Result<HashSums, error::Error>
+fn compute_metrics<P>(path: P) -> Result<Metrics, error::Error>
 where
     P: AsRef<Path>
 {
     let mut f = File::open(path)?;
 
-    let mut hashers = Hashers::default();
+    let mut hashers = Engines::default();
 
     let mut buffer = [0; 4096];
     loop {
@@ -150,8 +195,8 @@ impl Database {
         for entry in WalkBuilder::new(&path).build() {
             let entry = entry?;
             if entry.file_type().map_or(false, |t| t.is_file()) {
-                let hashes = compute_hashes(entry.path())?;
-                let result = Entry::File(hashes);
+                let metrics = compute_metrics(entry.path())?;
+                let result = Entry::File(metrics);
                 let short_path = entry.path().strip_prefix(&path)?;
                 database.insert(short_path.to_owned(), result);
             }
