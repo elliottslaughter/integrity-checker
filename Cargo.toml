@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 
 [dependencies]
-clap = "2.21"
+clap = "2.23"
 ignore = "0.1.9"
 
 serde = "1.0"
