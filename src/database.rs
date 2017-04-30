@@ -1,4 +1,3 @@
-use std;
 use std::collections::BTreeMap;
 use std::default::Default;
 use std::fs::File;
@@ -17,11 +16,18 @@ use sha3;
 use error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct Database(BTreeMap<PathBuf, Entry>);
+pub struct Database(Entry);
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Entry {
+    Directory(BTreeMap<PathBuf, Entry>),
     File(HashSums),
+}
+
+impl Default for Entry {
+    fn default() -> Entry {
+        Entry::Directory(BTreeMap::default())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -69,6 +75,68 @@ where
     Ok(hashers.result())
 }
 
+trait BTreeMapExt<K, V> where K: Ord, V: Default {
+    fn get_mut_default(&mut self, key: K) -> &mut V;
+}
+
+impl<K, V> BTreeMapExt<K, V> for BTreeMap<K, V>
+where
+    K: Ord + Clone,
+    V: Default,
+{
+    fn get_mut_default(&mut self, key: K) -> &mut V {
+        if self.contains_key(&key) {
+            match self.get_mut(&key) {
+                Some(value) => value,
+                None => unreachable!(), // Already checked that key exists
+            }
+        } else {
+            {
+                // FIXME: Would prefer to avoid the clone
+                match self.insert(key.clone(), V::default()) {
+                    Some(_) => unreachable!(), // Already checked for key
+                    None => (),
+                }
+            }
+            {
+                match self.get_mut(&key) {
+                    Some(value) => value,
+                    None => unreachable!(), // Already checked that key exists
+                }
+            }
+        }
+    }
+}
+
+impl Entry {
+    fn insert(&mut self, path: PathBuf, file: Entry) {
+        // Inner nodes in the tree should always be directories. If
+        // the node is not a directory, that means we are inserting a
+        // duplicate file. However, this function is only called from
+        // the directory walker, which makes it impossible to observe
+        // any duplicates. (And the database, after construction, is
+        // always immutable.)
+        match self {
+            &mut Entry::Directory(ref mut entries) => {
+                let mut components = path.components();
+                let count = components.clone().count();
+                let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
+                let rest = components.as_path().to_owned();
+                if count > 1 {
+                    let mut subentry = entries.get_mut_default(first);
+                    subentry.insert(rest, file);
+                } else {
+                    match entries.insert(first, file) {
+                        Some(_) => unreachable!(), // See above
+                        None => (),
+                    }
+                }
+            }
+            &mut Entry::File(_) => unreachable!()
+        }
+    }
+}
+
 impl Database {
     fn insert(&mut self, path: PathBuf, entry: Entry) {
         self.0.insert(path, entry);
@@ -112,17 +180,17 @@ impl Database {
     }
 }
 
-impl std::fmt::Display for Database {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for (path, entry) in self.0.iter() {
-            match entry {
-                &Entry::File(ref hashes) => {
-                    let hash: Vec<_> = hashes.sha2.0.iter().map(
-                        |b| format!("{:02x}", b)).collect();
-                    writeln!(f, "{} {}", hash.join(""), Path::new(path).display())?
-                }
-            }
-        }
-        Ok(())
-    }
-}
+// impl std::fmt::Display for Database {
+//     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//         for (path, entry) in self.0.iter() {
+//             match entry {
+//                 &Entry::File(ref hashes) => {
+//                     let hash: Vec<_> = hashes.sha2.0.iter().map(
+//                         |b| format!("{:02x}", b)).collect();
+//                     writeln!(f, "{} {}", hash.join(""), Path::new(path).display())?
+//                 }
+//             }
+//         }
+//         Ok(())
+//     }
+// }
