@@ -1,4 +1,5 @@
 extern crate ignore;
+extern crate time;
 
 #[macro_use]
 extern crate serde_derive;

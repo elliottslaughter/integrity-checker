@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 
 use digest::Digest;
 use ignore::WalkBuilder;
+use time;
+
 use serde_bytes;
 use serde_cbor;
 use serde_json;
@@ -219,11 +221,14 @@ impl Database {
     where
         P: AsRef<Path>,
     {
+        let mut total_bytes = 0;
+        let start_time_ns = time::precise_time_ns();
         let mut database = Database::default();
         for entry in WalkBuilder::new(&root).build() {
             let entry = entry?;
             if entry.file_type().map_or(false, |t| t.is_file()) {
                 let metrics = compute_metrics(entry.path())?;
+                total_bytes += metrics.size;
                 let result = Entry::File(metrics);
                 let short_path = if entry.path() == root.as_ref() {
                     Path::new(entry.path().file_name().expect("unreachable"))
@@ -233,6 +238,11 @@ impl Database {
                 database.insert(short_path.to_owned(), result);
             }
         }
+        let stop_time_ns = time::precise_time_ns();
+        println!("Database::build took {:.3} seconds, read {} bytes, {:.1} MB/s",
+                 (stop_time_ns - start_time_ns) as f64/1e9,
+                 total_bytes,
+                 total_bytes as f64/((stop_time_ns - start_time_ns) as f64/1e3));
         Ok(database)
     }
 

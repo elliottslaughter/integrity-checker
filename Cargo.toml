@@ -6,6 +6,7 @@ authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 [dependencies]
 clap = "2.23"
 ignore = "0.1.9"
+time = "0.1"
 
 serde = "1.0"
 serde_bytes = "0.10"
