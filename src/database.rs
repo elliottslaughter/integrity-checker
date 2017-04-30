@@ -121,7 +121,7 @@ where
 }
 
 trait BTreeMapExt<K, V> where K: Ord, V: Default {
-    fn get_mut_default(&mut self, key: K) -> &mut V;
+    fn get_default(&mut self, key: K) -> &mut V;
 }
 
 impl<K, V> BTreeMapExt<K, V> for BTreeMap<K, V>
@@ -129,8 +129,8 @@ where
     K: Ord + Clone,
     V: Default,
 {
-    fn get_mut_default(&mut self, key: K) -> &mut V {
-        self.entry(key).or_insert(V::default())
+    fn get_default(&mut self, key: K) -> &mut V {
+        self.entry(key).or_insert_with(|| V::default())
     }
 }
 
@@ -149,7 +149,7 @@ impl Entry {
                 let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
                 let rest = components.as_path().to_owned();
                 if count > 1 {
-                    let mut subentry = entries.get_mut_default(first);
+                    let mut subentry = entries.get_default(first);
                     subentry.insert(rest, file);
                 } else {
                     match entries.insert(first, file) {
