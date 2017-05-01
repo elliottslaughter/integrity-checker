@@ -184,30 +184,6 @@ impl Entry {
     }
 }
 
-fn summarize<P>(path: P, expected: &Metrics, actual: &Metrics)
-where
-    P: AsRef<Path>,
-{
-    let diff = expected.size != actual.size ||
-        expected.sha2 != actual.sha2 ||
-        expected.sha3 != actual.sha3;
-    if diff {
-        let suspicious_size = expected.size > 0 && actual.size == 0;
-        let suspicious_nul = expected.nul != actual.nul;
-        let suspicious_nonascii = expected.nonascii != actual.nonascii;
-        println!("{} differs", path.as_ref().display());
-        if suspicious_size {
-            println!("  suspicious: file was truncated");
-        }
-        if suspicious_nul {
-            println!("  suspicious: original had no NUL bytes, but now does");
-        }
-        if suspicious_nonascii {
-            println!("  suspicious: original had no non-ASCII bytes, but now does");
-        }
-    }
-}
-
 #[derive(Debug)]
 pub enum EntryDiff {
     Directory(BTreeMap<PathBuf, EntryDiff>, DirectoryDiff),
@@ -235,33 +211,35 @@ impl EntryDiff {
     fn show_diff(&self, path: &PathBuf, depth: usize) {
         match *self {
             EntryDiff::Directory(ref entries, ref diff) => {
-                println!("{}{}: {} changed, {} added, {} removed, {} unchanged",
-                         "  ".repeat(depth),
-                         path.display(),
-                         diff.changed,
-                         diff.added,
-                         diff.removed,
-                         diff.unchanged);
-                for (key, entry) in entries.iter() {
-                    entry.show_diff(key, depth+1);
+                if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
+                    println!("{}{}: {} changed, {} added, {} removed, {} unchanged",
+                             "| ".repeat(depth),
+                             path.display(),
+                             diff.changed,
+                             diff.added,
+                             diff.removed,
+                             diff.unchanged);
+                    for (key, entry) in entries.iter() {
+                        entry.show_diff(key, depth+1);
+                    }
                 }
             }
             EntryDiff::File(ref diff) => {
-                if diff.changed_content {
+                if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
                     println!("{}{} changed",
-                             "  ".repeat(depth),
+                             "| ".repeat(depth),
                              path.display());
                     if diff.zeroed {
-                        println!("{}suspicious: file was truncated",
-                                 "  ".repeat(depth+1));
+                        println!("{}  suspicious: file was truncated",
+                                 "| ".repeat(depth));
                     }
                     if diff.changed_nul {
-                        println!("{}suspicious: original had no NUL bytes, but now does",
-                                 "  ".repeat(depth+1));
+                        println!("{}  suspicious: original had no NUL bytes, but now does",
+                                 "| ".repeat(depth));
                     }
                     if diff.changed_nonascii {
-                        println!("{}suspicious: original had no non-ASCII bytes, but now does",
-                                 "  ".repeat(depth+1));
+                        println!("{}  suspicious: original had no non-ASCII bytes, but now does",
+                                 "| ".repeat(depth));
                     }
                 }
             }
@@ -301,11 +279,10 @@ impl Entry {
                             let diff = old_value.diff(new_value);
                             match diff {
                                 EntryDiff::Directory(_, ref stats) => {
-                                    if stats.added > 0 || stats.removed > 0 || stats.changed > 0 {
-                                        changed += 1;
-                                    } else {
-                                        unchanged += 1;
-                                    }
+                                    added += stats.added;
+                                    removed += stats.removed;
+                                    changed += stats.changed;
+                                    unchanged += stats.unchanged;
                                 }
                                 EntryDiff::File(ref stats) => {
                                     if stats.changed_content {
@@ -359,7 +336,7 @@ impl Database {
         self.0.diff(&other.0)
     }
 
-    pub fn build<P>(root: P) -> Result<Database, error::Error>
+    pub fn build<P>(root: P, verbose: bool) -> Result<Database, error::Error>
     where
         P: AsRef<Path>,
     {
@@ -381,10 +358,12 @@ impl Database {
             }
         }
         let stop_time_ns = time::precise_time_ns();
-        println!("Database::build took {:.3} seconds, read {} bytes, {:.1} MB/s",
-                 (stop_time_ns - start_time_ns) as f64/1e9,
-                 total_bytes,
-                 total_bytes as f64/((stop_time_ns - start_time_ns) as f64/1e3));
+        if verbose {
+            println!("Database::build took {:.3} seconds, read {} bytes, {:.1} MB/s",
+                     (stop_time_ns - start_time_ns) as f64/1e9,
+                     total_bytes,
+                     total_bytes as f64/((stop_time_ns - start_time_ns) as f64/1e3));
+        }
         Ok(database)
     }
 
@@ -399,7 +378,7 @@ impl Database {
     {
         // FIXME: This is non-interactive, but vastly simply than
         // trying to implement the same functionality interactively.
-        let other = Database::build(root)?;
+        let other = Database::build(root, false)?;
         self.show_diff(&other);
         Ok(())
     }

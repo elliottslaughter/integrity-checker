@@ -55,7 +55,7 @@ fn main() {
     let action = parse_args();
     match action {
         Action::Build { db_path, dir_path } => {
-            let database = Database::build(&dir_path).unwrap();
+            let database = Database::build(&dir_path, true).unwrap();
 
             {
                 let mut json_path = PathBuf::from(&db_path);
