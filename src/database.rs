@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::cmp::Ordering;
 use std::default::Default;
 use std::fs::File;
 use std::io::{Read, Write};
@@ -183,7 +184,6 @@ impl Entry {
     }
 }
 
-
 fn summarize<P>(path: P, expected: &Metrics, actual: &Metrics)
 where
     P: AsRef<Path>,
@@ -208,13 +208,155 @@ where
     }
 }
 
+#[derive(Debug)]
+pub enum EntryDiff {
+    Directory(BTreeMap<PathBuf, EntryDiff>, DirectoryDiff),
+    File(MetricsDiff),
+    KindChanged,
+}
+
+#[derive(Debug)]
+pub struct DirectoryDiff {
+    added: u64,
+    removed: u64,
+    changed: u64,
+    unchanged: u64,
+}
+
+#[derive(Debug)]
+pub struct MetricsDiff {
+    changed_content: bool,
+    zeroed: bool,
+    changed_nul: bool,
+    changed_nonascii: bool,
+}
+
+impl EntryDiff {
+    fn show_diff(&self, path: &PathBuf, depth: usize) {
+        match *self {
+            EntryDiff::Directory(ref entries, ref diff) => {
+                println!("{}{}: {} changed, {} added, {} removed, {} unchanged",
+                         "  ".repeat(depth),
+                         path.display(),
+                         diff.changed,
+                         diff.added,
+                         diff.removed,
+                         diff.unchanged);
+                for (key, entry) in entries.iter() {
+                    entry.show_diff(key, depth+1);
+                }
+            }
+            EntryDiff::File(ref diff) => {
+                if diff.changed_content {
+                    println!("{}{} changed",
+                             "  ".repeat(depth),
+                             path.display());
+                    if diff.zeroed {
+                        println!("{}suspicious: file was truncated",
+                                 "  ".repeat(depth+1));
+                    }
+                    if diff.changed_nul {
+                        println!("{}suspicious: original had no NUL bytes, but now does",
+                                 "  ".repeat(depth+1));
+                    }
+                    if diff.changed_nonascii {
+                        println!("{}suspicious: original had no non-ASCII bytes, but now does",
+                                 "  ".repeat(depth+1));
+                    }
+                }
+            }
+            EntryDiff::KindChanged => {
+            }
+        }
+    }
+}
+
+impl Entry {
+    fn diff(&self, other: &Entry) -> EntryDiff {
+        match (self, other) {
+            (&Entry::Directory(ref old), &Entry::Directory(ref new)) => {
+                let mut entries = BTreeMap::default();
+                let mut added = 0;
+                let mut removed = 0;
+                let mut changed = 0;
+                let mut unchanged = 0;
+
+                let mut old_iter = old.iter();
+                let mut new_iter = new.iter();
+                let mut old_entry = old_iter.next();
+                let mut new_entry = new_iter.next();
+                while old_entry.is_some() && new_entry.is_some() {
+                    let (old_key, old_value) = old_entry.unwrap();
+                    let (new_key, new_value) = new_entry.unwrap();
+                    match old_key.cmp(new_key) {
+                        Ordering::Less => {
+                            removed += 1;
+                            old_entry = old_iter.next();
+                        }
+                        Ordering::Greater => {
+                            added += 1;
+                            new_entry = new_iter.next();
+                        }
+                        Ordering::Equal => {
+                            let diff = old_value.diff(new_value);
+                            match diff {
+                                EntryDiff::Directory(_, ref stats) => {
+                                    if stats.added > 0 || stats.removed > 0 || stats.changed > 0 {
+                                        changed += 1;
+                                    } else {
+                                        unchanged += 1;
+                                    }
+                                }
+                                EntryDiff::File(ref stats) => {
+                                    if stats.changed_content {
+                                        changed += 1;
+                                    } else {
+                                        unchanged += 1;
+                                    }
+                                }
+                                EntryDiff::KindChanged => {
+                                    changed += 1;
+                                }
+                            }
+                            entries.insert(old_key.clone(), diff);
+                            old_entry = old_iter.next();
+                            new_entry = new_iter.next();
+                        }
+                    }
+                }
+                removed += old_iter.count() as u64;
+                added += new_iter.count() as u64;
+                EntryDiff::Directory(
+                    entries,
+                    DirectoryDiff { added, removed, changed, unchanged })
+            },
+            (&Entry::File(ref old), &Entry::File(ref new)) =>
+                EntryDiff::File(
+                    MetricsDiff {
+                        changed_content: old.size != new.size ||
+                            old.sha2 != new.sha2 ||
+                            old.sha3 != new.sha3,
+                        zeroed: old.size > 0 && new.size == 0,
+                        changed_nul: old.nul != new.nul,
+                        changed_nonascii: old.nonascii != new.nonascii,
+                    }
+                ),
+            (_, _) => EntryDiff::KindChanged,
+        }
+    }
+}
+
 impl Database {
     fn insert(&mut self, path: PathBuf, entry: Entry) {
         self.0.insert(path, entry);
     }
 
-    fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
+    pub fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
         self.0.lookup(path)
+    }
+
+    pub fn diff(&self, other: &Database) -> EntryDiff {
+        self.0.diff(&other.0)
     }
 
     pub fn build<P>(root: P) -> Result<Database, error::Error>
@@ -246,30 +388,19 @@ impl Database {
         Ok(database)
     }
 
+    pub fn show_diff(&self, other: &Database) {
+        let diff = self.diff(other);
+        diff.show_diff(&Path::new(".").to_owned(), 0);
+    }
+
     pub fn check<P>(&self, root: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>,
     {
-        // FIXME: Doesn't check for missing entries
-        for entry in WalkBuilder::new(&root).build() {
-            let entry = entry?;
-            if entry.file_type().map_or(false, |t| t.is_file()) {
-                let actual = compute_metrics(entry.path())?;
-
-                let short_path = if entry.path() == root.as_ref() {
-                    Path::new(entry.path().file_name().expect("unreachable"))
-                } else {
-                    entry.path().strip_prefix(&root)?
-                };
-                let expected = self.lookup(&short_path.to_owned());
-                match expected {
-                    Some(&Entry::File(ref metrics)) => summarize(
-                        short_path, metrics, &actual),
-                    Some(&Entry::Directory(_)) => unreachable!(),
-                    None => println!("{} was created", short_path.display()),
-                }
-            }
-        }
+        // FIXME: This is non-interactive, but vastly simply than
+        // trying to implement the same functionality interactively.
+        let other = Database::build(root)?;
+        self.show_diff(&other);
         Ok(())
     }
 
