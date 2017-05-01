@@ -48,3 +48,17 @@ See the [format description](FORMAT.md).
     difficult to be assured that you haven't been subject to silent
     data corruption. This tool can be part of a larger toolkit for
     ensuring the validity of long-term storage.
+
+## TODO
+
+  * Checksum the database itself (i.e. encode the database in memory,
+    compute checksum(s), and write the database prefixed by size and
+    checksum(s))
+  * Traverse files in parallel when building the initial database
+  * Measure performance and see if any of the major components (e.g. the
+    checksums) are CPU-bound and can be made to run any faster
+  * Check the results on real-world backups and see if anything can be done
+    to surface useful data while minimizing false positives
+  * Rewrite check subcommand to report results interactively, instead of
+    synchronously building an entire database in memory
+  * Unit/integration tests
