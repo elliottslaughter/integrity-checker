@@ -13,6 +13,7 @@ use integrity_checker::database::Database;
 enum Action {
     Build { db_path: OsString, dir_path: OsString },
     Check { db_path: OsString, dir_path: OsString },
+    Diff { old_path: OsString, new_path: OsString },
 }
 
 fn parse_args() -> Action {
@@ -37,6 +38,16 @@ fn parse_args() -> Action {
                          .help("Path of file or directory to scan")
                          .required(true)
                          .index(2)))
+        .subcommand(clap::SubCommand::with_name("diff")
+                    .about("Compare two integrity databases")
+                    .arg(clap::Arg::with_name("old")
+                         .help("Path of old integrity database")
+                         .required(true)
+                         .index(1))
+                    .arg(clap::Arg::with_name("new")
+                         .help("Path of new integrity database")
+                         .required(true)
+                         .index(2)))
         .get_matches();
     match matches.subcommand() {
         ("build", Some(submatches)) => Action::Build {
@@ -46,6 +57,10 @@ fn parse_args() -> Action {
         ("check", Some(submatches)) => Action::Check {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
             dir_path: submatches.value_of_os("path").unwrap().to_owned(),
+        },
+        ("diff", Some(submatches)) => Action::Diff {
+            old_path: submatches.value_of_os("old").unwrap().to_owned(),
+            new_path: submatches.value_of_os("new").unwrap().to_owned(),
         },
         _ => unreachable!(),
     }
@@ -79,6 +94,15 @@ fn main() {
             cbor_path.set_extension("cbor");
             let database = Database::load_cbor(&cbor_path).unwrap();
             database.check(&dir_path).unwrap();
+        }
+        Action::Diff { old_path, new_path } => {
+            let mut cbor_old_path = PathBuf::from(&old_path);
+            cbor_old_path.set_extension("cbor");
+            let mut cbor_new_path = PathBuf::from(&new_path);
+            cbor_new_path.set_extension("cbor");
+            let old = Database::load_cbor(&cbor_old_path).unwrap();
+            let new = Database::load_cbor(&cbor_new_path).unwrap();
+            old.show_diff(&new);
         }
     }
 }
