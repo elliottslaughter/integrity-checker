@@ -230,16 +230,16 @@ impl EntryDiff {
                              "| ".repeat(depth),
                              path.display());
                     if diff.zeroed {
-                        println!("{}  suspicious: file was truncated",
-                                 "| ".repeat(depth));
+                        println!("{}> suspicious: file was truncated",
+                                 "##".repeat(depth));
                     }
                     if diff.changed_nul {
-                        println!("{}  suspicious: original had no NUL bytes, but now does",
-                                 "| ".repeat(depth));
+                        println!("{}> suspicious: original had no NUL bytes, but now does",
+                                 "##".repeat(depth));
                     }
                     if diff.changed_nonascii {
-                        println!("{}  suspicious: original had no non-ASCII bytes, but now does",
-                                 "| ".repeat(depth));
+                        println!("{}> suspicious: original had no non-ASCII bytes, but now does",
+                                 "##".repeat(depth));
                     }
                 }
             }
