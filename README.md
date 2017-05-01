@@ -51,9 +51,12 @@ See the [format description](FORMAT.md).
 
 ## TODO
 
+  * Set returncode on check/diff: 0 (no changes), 1 (changes), 2
+    (suspicious changes), negative (failure); or something similar
   * Checksum the database itself (i.e. encode the database in memory,
     compute checksum(s), and write the database prefixed by size and
     checksum(s))
+  * Consider whether compression of the database should be included
   * Traverse files in parallel when building the initial database
   * Measure performance and see if any of the major components (e.g. the
     checksums) are CPU-bound and can be made to run any faster
@@ -61,4 +64,6 @@ See the [format description](FORMAT.md).
     to surface useful data while minimizing false positives
   * Rewrite check subcommand to report results interactively, instead of
     synchronously building an entire database in memory
+  * Review the output of check/diff and consider if it can be made
+    more helpful
   * Unit/integration tests
