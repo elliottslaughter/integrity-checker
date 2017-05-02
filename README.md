@@ -66,4 +66,5 @@ See the [format description](FORMAT.md).
     synchronously building an entire database in memory
   * Review the output of check/diff and consider if it can be made
     more helpful
+  * Decide what metadata, if any, to save
   * Unit/integration tests
