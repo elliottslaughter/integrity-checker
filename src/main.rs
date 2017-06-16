@@ -11,9 +11,13 @@ use std::path::PathBuf;
 use integrity_checker::database::Database;
 
 enum Action {
-    Build { db_path: OsString, dir_path: OsString },
-    Check { db_path: OsString, dir_path: OsString },
+    Build { db_path: OsString, dir_path: OsString, threads: usize },
+    Check { db_path: OsString, dir_path: OsString, threads: usize },
     Diff { old_path: OsString, new_path: OsString },
+}
+
+fn validate_usize(s: String) -> Result<(), String> {
+    s.parse::<usize>().map(|_| ()).map_err(|e| e.to_string())
 }
 
 fn parse_args() -> Action {
@@ -27,7 +31,12 @@ fn parse_args() -> Action {
                     .arg(clap::Arg::with_name("path")
                          .help("Path of file or directory to scan")
                          .required(true)
-                         .index(2)))
+                         .index(2))
+                    .arg(clap::Arg::with_name("threads")
+                         .help("Number of threads to use")
+                         .short("j").long("threads")
+                         .takes_value(true)
+                         .validator(validate_usize)))
         .subcommand(clap::SubCommand::with_name("check")
                     .about("Check an integrity database against a directory")
                     .arg(clap::Arg::with_name("database")
@@ -37,7 +46,12 @@ fn parse_args() -> Action {
                     .arg(clap::Arg::with_name("path")
                          .help("Path of file or directory to scan")
                          .required(true)
-                         .index(2)))
+                         .index(2))
+                    .arg(clap::Arg::with_name("threads")
+                         .help("Number of threads to use")
+                         .short("j").long("threads")
+                         .takes_value(true)
+                         .validator(validate_usize)))
         .subcommand(clap::SubCommand::with_name("diff")
                     .about("Compare two integrity databases")
                     .arg(clap::Arg::with_name("old")
@@ -53,10 +67,18 @@ fn parse_args() -> Action {
         ("build", Some(submatches)) => Action::Build {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
             dir_path: submatches.value_of_os("path").unwrap().to_owned(),
+            threads: match submatches.value_of("threads") {
+                None => 1, // FIXME: Pick a reasonable number of threads
+                Some(threads) => threads.parse().unwrap(),
+            },
         },
         ("check", Some(submatches)) => Action::Check {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
             dir_path: submatches.value_of_os("path").unwrap().to_owned(),
+            threads: match submatches.value_of("threads") {
+                None => 1, // FIXME: Pick a reasonable number of threads
+                Some(threads) => threads.parse().unwrap(),
+            },
         },
         ("diff", Some(submatches)) => Action::Diff {
             old_path: submatches.value_of_os("old").unwrap().to_owned(),
@@ -69,8 +91,8 @@ fn parse_args() -> Action {
 fn main() {
     let action = parse_args();
     match action {
-        Action::Build { db_path, dir_path } => {
-            let database = Database::build(&dir_path, true).unwrap();
+        Action::Build { db_path, dir_path, threads } => {
+            let database = Database::build(&dir_path, true, threads).unwrap();
 
             {
                 let mut json_path = PathBuf::from(&db_path);
@@ -89,11 +111,11 @@ fn main() {
             let cbor = serde_cbor::to_vec(&database).unwrap();
             println!("CBOR bytes: {}", cbor.len());
         }
-        Action::Check { db_path, dir_path } => {
+        Action::Check { db_path, dir_path, threads } => {
             let mut cbor_path = PathBuf::from(&db_path);
             cbor_path.set_extension("cbor");
             let database = Database::load_cbor(&cbor_path).unwrap();
-            database.check(&dir_path).unwrap();
+            database.check(&dir_path, threads).unwrap();
         }
         Action::Diff { old_path, new_path } => {
             let mut cbor_old_path = PathBuf::from(&old_path);

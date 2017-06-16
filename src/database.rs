@@ -4,9 +4,10 @@ use std::default::Default;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 use digest::{Digest, VariableOutput};
-use ignore::WalkBuilder;
+use ignore::{WalkBuilder, WalkState};
 use time;
 
 use serde_bytes;
@@ -338,35 +339,65 @@ impl Database {
         self.0.diff(&other.0)
     }
 
-    pub fn build<P>(root: P, verbose: bool) -> Result<Database, error::Error>
+    pub fn build<P>(root: P, verbose: bool, threads: usize) -> Result<Database, error::Error>
     where
         P: AsRef<Path>,
     {
-        let mut total_bytes = 0;
+        let total_bytes = Arc::new(Mutex::new(0));
+        let database = Arc::new(Mutex::new(Database::default()));
         let start_time_ns = time::precise_time_ns();
-        let mut database = Database::default();
-        for entry in WalkBuilder::new(&root).build() {
-            let entry = entry?;
-            if entry.file_type().map_or(false, |t| t.is_file()) {
-                let metrics = compute_metrics(entry.path())?;
-                total_bytes += metrics.size;
-                let result = Entry::File(metrics);
-                let short_path = if entry.path() == root.as_ref() {
-                    Path::new(entry.path().file_name().expect("unreachable"))
-                } else {
-                    entry.path().strip_prefix(&root)?
-                };
-                database.insert(short_path.to_owned(), result);
+
+        let parallel = threads > 1;
+        if parallel {
+            WalkBuilder::new(&root).threads(threads).build_parallel().run(|| {
+                let total_bytes = total_bytes.clone();
+                let database = database.clone();
+                let root = root.as_ref().to_owned();
+                Box::new(move |entry| {
+                    let entry = entry.unwrap(); // ?
+                    if entry.file_type().map_or(false, |t| t.is_file()) {
+                        let metrics = compute_metrics(entry.path()).unwrap(); // ?
+                        *total_bytes.lock().unwrap() += metrics.size;
+                        let result = Entry::File(metrics);
+                        let short_path = if entry.path() == root {
+                            Path::new(entry.path().file_name().expect("unreachable"))
+                        } else {
+                            entry.path().strip_prefix(&root).unwrap() // ?
+                        };
+                        database.lock().unwrap().insert(short_path.to_owned(), result);
+                    }
+                    WalkState::Continue
+                })
+            });
+        } else {
+            let ref mut total_bytes = *total_bytes.lock().unwrap();
+            let ref mut database = *database.lock().unwrap();
+            for entry in WalkBuilder::new(&root).build() {
+                let entry = entry?;
+                if entry.file_type().map_or(false, |t| t.is_file()) {
+                    let metrics = compute_metrics(entry.path())?;
+                    *total_bytes += metrics.size;
+                    let result = Entry::File(metrics);
+                    let short_path = if entry.path() == root.as_ref() {
+                        Path::new(entry.path().file_name().expect("unreachable"))
+                    } else {
+                        entry.path().strip_prefix(&root)?
+                    };
+                    database.insert(short_path.to_owned(), result);
+                }
             }
         }
         let stop_time_ns = time::precise_time_ns();
         if verbose {
-            println!("Database::build took {:.3} seconds, read {} bytes, {:.1} MB/s",
+            let total_bytes = *total_bytes.lock().unwrap();
+            println!("Database::build took {:.3} seconds on {} threads, read {} bytes, {:.1} MB/s",
                      (stop_time_ns - start_time_ns) as f64/1e9,
+                     threads,
                      total_bytes,
                      total_bytes as f64/((stop_time_ns - start_time_ns) as f64/1e3));
         }
-        Ok(database)
+        let ref database = *database.lock().unwrap();
+        Ok(database.clone())
     }
 
     pub fn show_diff(&self, other: &Database) {
@@ -374,13 +405,13 @@ impl Database {
         diff.show_diff(&Path::new(".").to_owned(), 0);
     }
 
-    pub fn check<P>(&self, root: P) -> Result<(), error::Error>
+    pub fn check<P>(&self, root: P, threads: usize) -> Result<(), error::Error>
     where
         P: AsRef<Path>,
     {
         // FIXME: This is non-interactive, but vastly simply than
         // trying to implement the same functionality interactively.
-        let other = Database::build(root, false)?;
+        let other = Database::build(root, false, threads)?;
         self.show_diff(&other);
         Ok(())
     }
