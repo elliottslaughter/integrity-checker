@@ -2,6 +2,7 @@
 name = "integrity-checker"
 version = "0.1.0"
 dependencies = [
+ "blake2 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 2.23.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "digest 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ignore 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -11,7 +12,6 @@ dependencies = [
  "serde_derive 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sha2 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sha3 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.37 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -42,6 +42,17 @@ dependencies = [
 name = "bitflags"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "blake2"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "byte-tools 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crypto-mac 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "digest 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "generic-array 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "block-buffer"
@@ -78,9 +89,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "constant_time_eq"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "crossbeam"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "crypto-mac"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "constant_time_eq 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "generic-array 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "digest"
@@ -298,17 +323,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sha3"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "block-buffer 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "byte-tools 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "digest 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "generic-array 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "strsim"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -438,11 +452,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum ansi_term 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "23ac7c30002a5accbf7e8987d0632fa6de155b7c3d39d0067317a391e00a2ef6"
 "checksum atty 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d912da0db7fa85514874458ca3651fe2cddace8d0b0505571dbdcd41ab490159"
 "checksum bitflags 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "826e1ab483fc81a8143faa7203c4a3c02888ebd1a782e37e41fa34753ba9a162"
+"checksum blake2 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "efbab0ff0c79c07dab12a3fdeb5175c8b1513266bb17657de00815123ea4f981"
 "checksum block-buffer 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1339a1042f5d9f295737ad4d9a6ab6bf81c84a933dba110b9200cd6d1448b814"
 "checksum byte-tools 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "560c32574a12a89ecd91f5e742165893f86e3ab98d21f8ea548658eb9eef5f40"
 "checksum byteorder 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c40977b0ee6b9885c9013cd41d9feffdd22deb3bb4dc3a71d901cc7a77de18c8"
 "checksum clap 2.23.3 (registry+https://github.com/rust-lang/crates.io-index)" = "f57e9b63057a545ad2ecd773ea61e49422ed1b1d63d74d5da5ecaee55b3396cd"
+"checksum constant_time_eq 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "07dcb7959f0f6f1cf662f9a7ff389bcb919924d99ac41cf31f10d611d8721323"
 "checksum crossbeam 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)" = "0c5ea215664ca264da8a9d9c3be80d2eaf30923c259d03e870388eb927508f97"
+"checksum crypto-mac 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "779015233ac67d65098614aec748ac1c756ab6677fa2e14cf8b37c08dfed1198"
 "checksum digest 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d34824a2f924dad6a78e8e0697be0c67f00e2c0c5976dff564aefd1187e0d513"
 "checksum dtoa 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "80c8b71fd71146990a9742fc06dcbbde19161a267e0ad4e572c35162f4578c90"
 "checksum fake-simd 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e88a8acf291dafb59c2d96e8f59828f3838bb1a70398823ade51a84de6a6deed"
@@ -471,7 +488,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum serde_derive_internals 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "021c338d22c7e30f957a6ab7e388cb6098499dda9fd4ba1661ee074ca7a180d1"
 "checksum serde_json 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "1c62115693d0a9ed8c32d1c760f0fdbe7d4b05cb13c135b9b54137ac0d59fccb"
 "checksum sha2 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7d963c78ce367df26d7ea8b8cc655c651b42e8a1e584e869c1e17dae3ccb116a"
-"checksum sha3 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "26405905b6a56a94c60109cfda62610507ac14a65be531f5767dec5c5a8dd6a0"
 "checksum strsim 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b4d15c810519a91cf877e7e36e63fe068815c678181439f2f29e2562147c3694"
 "checksum syn 0.11.11 (registry+https://github.com/rust-lang/crates.io-index)" = "d3b891b9015c88c576343b9b3e41c2c11a51c219ef067b264bd9c8aa9b441dad"
 "checksum synom 0.11.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a393066ed9010ebaed60b9eafa373d4b1baac186dd7e008555b0f702b51945b6"

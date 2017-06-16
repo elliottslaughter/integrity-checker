@@ -10,7 +10,7 @@ extern crate serde_json;
 
 extern crate digest;
 extern crate sha2;
-extern crate sha3;
+extern crate blake2;
 
 pub mod database;
 pub mod error;

@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
-use digest::Digest;
+use digest::{Digest, VariableOutput};
 use ignore::WalkBuilder;
 use time;
 
@@ -14,7 +14,7 @@ use serde_cbor;
 use serde_json;
 
 use sha2;
-use sha3;
+use blake2;
 
 use error;
 
@@ -36,7 +36,7 @@ impl Default for Entry {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Metrics {
     sha2: HashSum,
-    sha3: HashSum,
+    blake2: HashSum,
     size: u64,      // File size
     nul: bool,      // Does the file contain a NUL byte?
     nonascii: bool, // Does the file contain non-ASCII bytes?
@@ -80,8 +80,8 @@ impl EngineNonascii {
 
 #[derive(Default)]
 struct Engines {
-    sha2: sha2::Sha256,
-    sha3: sha3::Sha3_256,
+    sha2: sha2::Sha512Trunc256,
+    blake2: blake2::Blake2b,
     size: EngineSize,
     nul: EngineNul,
     nonascii: EngineNonascii,
@@ -90,15 +90,17 @@ struct Engines {
 impl Engines {
     fn input(&mut self, input: &[u8]) {
         self.sha2.input(input);
-        self.sha3.input(input);
+        self.blake2.input(input);
         self.size.input(input);
         self.nul.input(input);
         self.nonascii.input(input);
     }
     fn result(self) -> Metrics {
+        let mut buffer = [0; 32];
         Metrics {
             sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
-            sha3: HashSum(Vec::from(self.sha3.result().as_slice())),
+            blake2: HashSum(
+                Vec::from(self.blake2.variable_result(&mut buffer).unwrap())),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
@@ -312,7 +314,7 @@ impl Entry {
                     MetricsDiff {
                         changed_content: old.size != new.size ||
                             old.sha2 != new.sha2 ||
-                            old.sha3 != new.sha3,
+                            old.blake2 != new.blake2,
                         zeroed: old.size > 0 && new.size == 0,
                         changed_nul: old.nul != new.nul,
                         changed_nonascii: old.nonascii != new.nonascii,
