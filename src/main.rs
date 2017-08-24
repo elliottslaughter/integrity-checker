@@ -2,6 +2,7 @@ extern crate clap;
 
 extern crate serde_cbor;
 extern crate serde_json;
+extern crate rmp_serde;
 
 extern crate integrity_checker;
 
@@ -106,10 +107,18 @@ fn main() {
                 database.dump_cbor(cbor_path).unwrap();
             }
 
+            {
+                let mut msgpack_path = PathBuf::from(&db_path);
+                msgpack_path.set_extension("msgpack");
+                database.dump_msgpack(msgpack_path).unwrap();
+            }
+
             let json = serde_json::to_string(&database).unwrap();
             println!("JSON bytes: {}", json.len());
             let cbor = serde_cbor::to_vec(&database).unwrap();
             println!("CBOR bytes: {}", cbor.len());
+            let msgpack = rmp_serde::to_vec(&database).unwrap();
+            println!("MsgPack bytes: {}", msgpack.len());
         }
         Action::Check { db_path, dir_path, threads } => {
             let mut cbor_path = PathBuf::from(&db_path);

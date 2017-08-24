@@ -7,6 +7,7 @@ extern crate serde_derive;
 extern crate serde_bytes;
 extern crate serde_cbor;
 extern crate serde_json;
+extern crate rmp_serde;
 
 extern crate digest;
 extern crate sha2;

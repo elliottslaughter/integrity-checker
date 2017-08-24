@@ -13,6 +13,7 @@ use time;
 use serde_bytes;
 use serde_cbor;
 use serde_json;
+use rmp_serde;
 
 use sha2;
 use blake2;
@@ -449,6 +450,24 @@ impl Database {
         let cbor = serde_cbor::to_vec(self)?;
         let mut f = File::create(path)?;
         f.write_all(cbor.as_slice())?;
+        Ok(())
+    }
+
+    pub fn load_msgpack<P>(path: P) -> Result<Database, error::Error>
+    where
+        P: AsRef<Path>
+    {
+        let f = File::open(path)?;
+        Ok(rmp_serde::from_read(f)?)
+    }
+
+    pub fn dump_msgpack<P>(&self, path: P) -> Result<(), error::Error>
+    where
+        P: AsRef<Path>
+    {
+        let msgpack = rmp_serde::to_vec(self)?;
+        let mut f = File::create(path)?;
+        f.write_all(msgpack.as_slice())?;
         Ok(())
     }
 }
