@@ -66,5 +66,11 @@ See the [format description](FORMAT.md).
     synchronously building an entire database in memory
   * Review the output of check/diff and consider if it can be made
     more helpful
-  * Decide what metadata, if any, to save
+  * Decide what metadata, if any, to save. Ideas:
+      * Contains NUL bytes
+      * Contains non-ASCII bytes
+      * Is encodable as UTF-8 or other formats
+      * Line endings (certain VCS tools like to munge these)
+      * Is a symlink (Dropbox likes to forget this one)
+      * Has extended attributes or resource forks or other unusual features
   * Unit/integration tests
