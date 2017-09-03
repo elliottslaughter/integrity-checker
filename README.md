@@ -73,4 +73,7 @@ See the [format description](FORMAT.md).
       * Line endings (certain VCS tools like to munge these)
       * Is a symlink (Dropbox likes to forget this one)
       * Has extended attributes or resource forks or other unusual features
+      * File name capitalization differs (might indicate trouble with a case-insensitive file system)
+      * Multiple files with names that differ only in capitalization (might indicate trouble with a case-sensitive file system)
+      * Differs in permissions (might indicate trouble with file system that doesn't track permissions)
   * Unit/integration tests
