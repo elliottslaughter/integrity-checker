@@ -219,7 +219,7 @@ pub enum DiffSummary {
 }
 
 impl EntryDiff {
-    fn show_diff(&self, path: &PathBuf, depth: usize) -> DiffSummary {
+    fn show_diff(&self, path: &PathBuf, depth: usize) {
         match *self {
             EntryDiff::Directory(ref entries, ref diff) => {
                 if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
@@ -230,15 +230,9 @@ impl EntryDiff {
                              diff.added,
                              diff.removed,
                              diff.unchanged);
-                    let mut diff_summary = DiffSummary::Changes;
                     for (key, entry) in entries.iter() {
-                        if entry.show_diff(key, depth + 1) == DiffSummary::Suspicious {
-                            diff_summary = DiffSummary::Suspicious;
-                        }
+                        entry.show_diff(key, depth + 1);
                     }
-                    diff_summary
-                } else {
-                    DiffSummary::NoChanges
                 }
             }
             EntryDiff::File(ref diff) => {
@@ -258,6 +252,23 @@ impl EntryDiff {
                         println!("{}> suspicious: original had no non-ASCII bytes, but now does",
                                  "##".repeat(depth));
                     }
+                }
+            }
+            EntryDiff::KindChanged => {
+            }
+        }
+    }
+
+    fn summarize_diff(&self) -> DiffSummary {
+        match *self {
+            EntryDiff::Directory(ref entries, ref _diff) => {
+                entries
+                    .values()
+                    .map(|x| x.summarize_diff())
+                    .fold(DiffSummary::NoChanges, |acc, x| acc.meet(x))
+            }
+            EntryDiff::File(ref diff) => {
+                if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
                     DiffSummary::Suspicious
                 } else if diff.changed_content {
                     DiffSummary::Changes
@@ -268,6 +279,18 @@ impl EntryDiff {
             EntryDiff::KindChanged => {
                 DiffSummary::Changes
             }
+        }
+    }
+}
+
+impl DiffSummary {
+    fn meet(self, other: DiffSummary) -> DiffSummary {
+        if self == DiffSummary::Suspicious || other == DiffSummary::Suspicious {
+            DiffSummary::Suspicious
+        } else if self == DiffSummary::Changes || other == DiffSummary::Changes {
+            DiffSummary::Changes
+        } else {
+            DiffSummary::NoChanges
         }
     }
 }
@@ -422,7 +445,8 @@ impl Database {
 
     pub fn show_diff(&self, other: &Database) -> DiffSummary {
         let diff = self.diff(other);
-        diff.show_diff(&Path::new(".").to_owned(), 0)
+        diff.show_diff(&Path::new(".").to_owned(), 0);
+        diff.summarize_diff()
     }
 
     pub fn check<P>(&self, root: P, threads: usize) -> Result<DiffSummary, error::Error>

@@ -97,7 +97,7 @@ fn parse_args() -> Action {
     }
 }
 
-fn run_app() -> Result<ActionSummary, error::Error> {
+fn driver() -> Result<ActionSummary, error::Error> {
     let action = parse_args();
     match action {
         Action::Build { db_path, dir_path, threads } => {
@@ -148,7 +148,7 @@ fn run_app() -> Result<ActionSummary, error::Error> {
 }
 
 fn main() {
-    ::std::process::exit(match run_app() {
+    ::std::process::exit(match driver() {
        Ok(action_summary) => match action_summary {
            ActionSummary::Built => 0,
            ActionSummary::Diff(DiffSummary::NoChanges) => 0,
