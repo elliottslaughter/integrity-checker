@@ -1,4 +1,4 @@
-# Backup Integrity Checker
+# Backup Integrity Checker [![Build Status](https://travis-ci.org/elliottslaughter/integrity-checker.svg?branch=master)](https://travis-ci.org/elliottslaughter/integrity-checker)
 
 This tool is (or will be) an integrity checker for backups. The vast
 majority of the functionality is currently missing, but the intention
