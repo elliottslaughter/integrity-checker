@@ -45,3 +45,10 @@ fn changes_new_bin() {
                       "tests/changes_new_bin/after");
     assert_eq!(result, DiffSummary::Changes);
 }
+
+#[test]
+fn changes_delete() {
+    let result = diff("tests/changes_delete/before",
+                      "tests/changes_delete/after");
+    assert_eq!(result, DiffSummary::Changes);
+}
