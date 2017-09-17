@@ -1,13 +1,19 @@
 extern crate integrity_checker;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use integrity_checker::database::{Database, DiffSummary};
 
-fn check<P>(before_path: P, after_path: P) -> DiffSummary
+fn check<P>(root_dir: P) -> DiffSummary
 where
     P: AsRef<Path>,
 {
+    let mut before_path = PathBuf::from(root_dir.as_ref());
+    before_path.push("before");
+
+    let mut after_path = PathBuf::from(root_dir.as_ref());
+    after_path.push("after");
+
     let threads = 1;
     let before_db = Database::build(&before_path, false, threads).unwrap();
     before_db.check(&after_path, threads).unwrap()
@@ -15,39 +21,36 @@ where
 
 #[test]
 fn no_changes() {
-    let result = check("tests/nochanges/before", "tests/nochanges/after");
+    let result = check("tests/nochanges");
     assert_eq!(result, DiffSummary::NoChanges);
 }
 
 #[test]
 fn changes_edit() {
-    let result = check("tests/changes_edit/before", "tests/changes_edit/after");
+    let result = check("tests/changes_edit");
     assert_eq!(result, DiffSummary::Changes);
 }
 
 #[test]
 fn changes_new() {
-    let result = check("tests/changes_new/before", "tests/changes_new/after");
+    let result = check("tests/changes_new");
     assert_eq!(result, DiffSummary::Changes);
 }
 
 #[test]
 fn changes_edit_bin() {
-    let result = check("tests/changes_edit_bin/before",
-                      "tests/changes_edit_bin/after");
+    let result = check("tests/changes_edit_bin");
     assert_eq!(result, DiffSummary::Changes);
 }
 
 #[test]
 fn changes_new_bin() {
-    let result = check("tests/changes_new_bin/before",
-                      "tests/changes_new_bin/after");
+    let result = check("tests/changes_new_bin");
     assert_eq!(result, DiffSummary::Changes);
 }
 
 #[test]
 fn changes_delete() {
-    let result = check("tests/changes_delete/before",
-                      "tests/changes_delete/after");
+    let result = check("tests/changes_delete");
     assert_eq!(result, DiffSummary::Changes);
 }
