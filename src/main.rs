@@ -23,6 +23,7 @@ fn validate_usize(s: String) -> Result<(), String> {
 
 fn parse_args() -> Action {
     let matches = clap::App::new("Integrity Checker")
+        .setting(clap::AppSettings::SubcommandRequiredElseHelp)
         .subcommand(clap::SubCommand::with_name("build")
                     .about("Creates an integrity database from a directory")
                     .arg(clap::Arg::with_name("database")
