@@ -51,8 +51,6 @@ See the [format description](FORMAT.md).
 
 ## TODO
 
-  * Set returncode on check/diff: 0 (no changes), 1 (changes), 2
-    (suspicious changes), negative (failure); or something similar
   * Checksum the database itself (i.e. encode the database in memory,
     compute checksum(s), and write the database prefixed by size and
     checksum(s))

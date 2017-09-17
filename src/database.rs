@@ -222,6 +222,13 @@ pub struct MetricsDiff {
     changed_nonascii: bool,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum DiffSummary {
+    NoChanges,
+    Changes,
+    Suspicious,
+}
+
 impl EntryDiff {
     fn show_diff(&self, path: &PathBuf, depth: usize) {
         match *self {
@@ -260,6 +267,41 @@ impl EntryDiff {
             }
             EntryDiff::KindChanged => {
             }
+        }
+    }
+
+    fn summarize_diff(&self) -> DiffSummary {
+        match *self {
+            EntryDiff::Directory(ref entries, ref _diff) => {
+                entries
+                    .values()
+                    .map(|x| x.summarize_diff())
+                    .fold(DiffSummary::NoChanges, |acc, x| acc.meet(x))
+            }
+            EntryDiff::File(ref diff) => {
+                if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
+                    DiffSummary::Suspicious
+                } else if diff.changed_content {
+                    DiffSummary::Changes
+                } else {
+                    DiffSummary::NoChanges
+                }
+            }
+            EntryDiff::KindChanged => {
+                DiffSummary::Changes
+            }
+        }
+    }
+}
+
+impl DiffSummary {
+    fn meet(self, other: DiffSummary) -> DiffSummary {
+        if self == DiffSummary::Suspicious || other == DiffSummary::Suspicious {
+            DiffSummary::Suspicious
+        } else if self == DiffSummary::Changes || other == DiffSummary::Changes {
+            DiffSummary::Changes
+        } else {
+            DiffSummary::NoChanges
         }
     }
 }
@@ -415,20 +457,20 @@ impl Database {
         Ok(database.clone())
     }
 
-    pub fn show_diff(&self, other: &Database) {
+    pub fn show_diff(&self, other: &Database) -> DiffSummary {
         let diff = self.diff(other);
         diff.show_diff(&Path::new(".").to_owned(), 0);
+        diff.summarize_diff()
     }
 
-    pub fn check<P>(&self, root: P, threads: usize) -> Result<(), error::Error>
+    pub fn check<P>(&self, root: P, threads: usize) -> Result<DiffSummary, error::Error>
     where
         P: AsRef<Path>,
     {
         // FIXME: This is non-interactive, but vastly simply than
         // trying to implement the same functionality interactively.
         let other = Database::build(root, false, threads)?;
-        self.show_diff(&other);
-        Ok(())
+        Ok(self.show_diff(&other))
     }
 
     #[cfg(feature = "json")]
