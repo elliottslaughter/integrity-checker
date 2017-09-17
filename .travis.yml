@@ -16,4 +16,4 @@ script:
   # - cargo +nightly fmt -- --write-mode=diff
   - cargo build
   - cargo test
-  - cargo run -- db README.md
+  - cargo run -- build db README.md
