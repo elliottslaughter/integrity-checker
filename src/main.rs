@@ -75,6 +75,11 @@ fn parse_args() -> Action {
                          .help("Path of new integrity database")
                          .required(true)
                          .index(2)))
+        .after_help("RETURN CODE: \
+                    \n    0       Success \
+                    \n    1       Changes \
+                    \n    2       Suspicious changes \
+                    \n   -1       Error")
         .get_matches();
     match matches.subcommand() {
         ("build", Some(submatches)) => Action::Build {
