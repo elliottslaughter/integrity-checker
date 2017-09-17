@@ -13,8 +13,11 @@ use ignore::{WalkBuilder, WalkState};
 use time;
 
 use serde_bytes;
+#[cfg(feature = "cbor")]
 use serde_cbor;
+#[cfg(feature = "json")]
 use serde_json;
+#[cfg(feature = "msgpack")]
 use rmp_serde;
 
 use sha2;
@@ -428,6 +431,7 @@ impl Database {
         Ok(())
     }
 
+    #[cfg(feature = "json")]
     pub fn load_json<P>(path: P) -> Result<Database, error::Error>
     where
         P: AsRef<Path>
@@ -436,6 +440,7 @@ impl Database {
         Ok(serde_json::from_reader(f)?)
     }
 
+    #[cfg(feature = "json")]
     pub fn dump_json<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
@@ -446,6 +451,7 @@ impl Database {
         Ok(())
     }
 
+    #[cfg(feature = "cbor")]
     pub fn load_cbor<P>(path: P) -> Result<Database, error::Error>
     where
         P: AsRef<Path>
@@ -454,6 +460,7 @@ impl Database {
         Ok(serde_cbor::from_reader(f)?)
     }
 
+    #[cfg(feature = "cbor")]
     pub fn dump_cbor<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
@@ -464,6 +471,7 @@ impl Database {
         Ok(())
     }
 
+    #[cfg(feature = "msgpack")]
     pub fn load_msgpack<P>(path: P) -> Result<Database, error::Error>
     where
         P: AsRef<Path>
@@ -472,6 +480,7 @@ impl Database {
         Ok(rmp_serde::from_read(f)?)
     }
 
+    #[cfg(feature = "msgpack")]
     pub fn dump_msgpack<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>

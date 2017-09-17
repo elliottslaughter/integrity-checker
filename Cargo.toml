@@ -4,9 +4,15 @@ version = "0.1.0"
 authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 
 [features]
-default = []
+default = ["json"]
 
+# Hashes
 blake2b = ["blake2"]
+
+# Output formats
+json = ["serde_json"]
+cbor = ["serde_cbor"]
+msgpack = ["rmp-serde"]
 
 [dependencies]
 clap = "2.26"
@@ -15,10 +21,11 @@ time = "0.1"
 
 serde = "1.0"
 serde_bytes = "0.10"
-serde_cbor = "0.6"
 serde_derive = "1.0"
-serde_json = "1.0"
-rmp-serde = "0.13"
+
+serde_cbor = { version = "0.6", optional = true }
+serde_json = { version = "1.0", optional = true }
+rmp-serde = { version = "0.13", optional = true }
 
 digest = "0.6"
 sha2 = "0.6"
