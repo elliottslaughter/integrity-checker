@@ -1,0 +1,18 @@
+sudo: false
+language: rust
+
+rust:
+  - stable
+  - beta
+
+cache:
+  cargo: true
+
+# before_script:
+#   - cargo +nightly install --force rustfmt-nightly
+
+script:
+  # - cargo +nightly fmt -- --write-mode=diff
+  - cargo build
+  - cargo test
+  - cargo run -- build db README.md

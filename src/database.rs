@@ -6,16 +6,22 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use digest::{Digest, VariableOutput};
+use digest::Digest;
+#[cfg(feature = "blake2b")]
+use digest::VariableOutput;
 use ignore::{WalkBuilder, WalkState};
 use time;
 
 use serde_bytes;
+#[cfg(feature = "cbor")]
 use serde_cbor;
+#[cfg(feature = "json")]
 use serde_json;
+#[cfg(feature = "msgpack")]
 use rmp_serde;
 
 use sha2;
+#[cfg(feature = "blake2b")]
 use blake2;
 
 use error;
@@ -38,6 +44,7 @@ impl Default for Entry {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Metrics {
     sha2: HashSum,
+    #[cfg(feature = "blake2b")]
     blake2: HashSum,
     size: u64,      // File size
     nul: bool,      // Does the file contain a NUL byte?
@@ -83,6 +90,7 @@ impl EngineNonascii {
 #[derive(Default)]
 struct Engines {
     sha2: sha2::Sha512Trunc256,
+    #[cfg(feature = "blake2b")]
     blake2: blake2::Blake2b,
     size: EngineSize,
     nul: EngineNul,
@@ -92,15 +100,18 @@ struct Engines {
 impl Engines {
     fn input(&mut self, input: &[u8]) {
         self.sha2.input(input);
+        #[cfg(feature = "blake2b")]
         self.blake2.input(input);
         self.size.input(input);
         self.nul.input(input);
         self.nonascii.input(input);
     }
     fn result(self) -> Metrics {
+        #[cfg(feature = "blake2b")]
         let mut buffer = [0; 32];
         Metrics {
             sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
+            #[cfg(feature = "blake2b")]
             blake2: HashSum(
                 Vec::from(self.blake2.variable_result(&mut buffer).unwrap())),
             size: self.size.result(),
@@ -353,17 +364,20 @@ impl Entry {
                     entries,
                     DirectoryDiff { added, removed, changed, unchanged })
             },
-            (&Entry::File(ref old), &Entry::File(ref new)) =>
+            (&Entry::File(ref old), &Entry::File(ref new)) => {
+                let changed = old.size != new.size;
+                let changed = changed || old.sha2 != new.sha2;
+                #[cfg(feature = "blake2b")]
+                let changed = changed || old.blake2 != new.blake2;
                 EntryDiff::File(
                     MetricsDiff {
-                        changed_content: old.size != new.size ||
-                            old.sha2 != new.sha2 ||
-                            old.blake2 != new.blake2,
+                        changed_content: changed,
                         zeroed: old.size > 0 && new.size == 0,
                         changed_nul: old.nul != new.nul,
                         changed_nonascii: old.nonascii != new.nonascii,
                     }
-                ),
+                )
+            },
             (_, _) => EntryDiff::KindChanged,
         }
     }
@@ -459,6 +473,7 @@ impl Database {
         Ok(self.show_diff(&other))
     }
 
+    #[cfg(feature = "json")]
     pub fn load_json<P>(path: P) -> Result<Database, error::Error>
     where
         P: AsRef<Path>
@@ -467,6 +482,7 @@ impl Database {
         Ok(serde_json::from_reader(f)?)
     }
 
+    #[cfg(feature = "json")]
     pub fn dump_json<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
@@ -477,6 +493,7 @@ impl Database {
         Ok(())
     }
 
+    #[cfg(feature = "cbor")]
     pub fn load_cbor<P>(path: P) -> Result<Database, error::Error>
     where
         P: AsRef<Path>
@@ -485,6 +502,7 @@ impl Database {
         Ok(serde_cbor::from_reader(f)?)
     }
 
+    #[cfg(feature = "cbor")]
     pub fn dump_cbor<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
@@ -495,6 +513,7 @@ impl Database {
         Ok(())
     }
 
+    #[cfg(feature = "msgpack")]
     pub fn load_msgpack<P>(path: P) -> Result<Database, error::Error>
     where
         P: AsRef<Path>
@@ -503,6 +522,7 @@ impl Database {
         Ok(rmp_serde::from_read(f)?)
     }
 
+    #[cfg(feature = "msgpack")]
     pub fn dump_msgpack<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
