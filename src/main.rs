@@ -10,7 +10,7 @@ use std::ffi::OsString;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-use integrity_checker::database::{Database, DiffCode};
+use integrity_checker::database::{Database, DiffSummary};
 use integrity_checker::error;
 
 enum Action {
@@ -20,9 +20,9 @@ enum Action {
 }
 
 #[derive(Debug)]
-enum ReturnCode {
+enum ActionSummary {
     Built,
-    Succeeded(DiffCode),
+    Diff(DiffSummary),
 }
 
 fn validate_usize(s: String) -> Result<(), String> {
@@ -97,7 +97,7 @@ fn parse_args() -> Action {
     }
 }
 
-fn run_app() -> Result<ReturnCode, error::Error> {
+fn run_app() -> Result<ActionSummary, error::Error> {
     let action = parse_args();
     match action {
         Action::Build { db_path, dir_path, threads } => {
@@ -127,13 +127,13 @@ fn run_app() -> Result<ReturnCode, error::Error> {
             println!("CBOR bytes: {}", cbor.len());
             let msgpack = rmp_serde::to_vec(&database)?;
             println!("MsgPack bytes: {}", msgpack.len());
-            Ok(ReturnCode::Built)
+            Ok(ActionSummary::Built)
         }
         Action::Check { db_path, dir_path, threads } => {
             let mut cbor_path = PathBuf::from(&db_path);
             cbor_path.set_extension("cbor");
             let database = Database::load_cbor(&cbor_path)?;
-            Ok(ReturnCode::Succeeded(database.check(&dir_path, threads)?))
+            Ok(ActionSummary::Diff(database.check(&dir_path, threads)?))
         }
         Action::Diff { old_path, new_path } => {
             let mut cbor_old_path = PathBuf::from(&old_path);
@@ -142,16 +142,18 @@ fn run_app() -> Result<ReturnCode, error::Error> {
             cbor_new_path.set_extension("cbor");
             let old = Database::load_cbor(&cbor_old_path)?;
             let new = Database::load_cbor(&cbor_new_path)?;
-            Ok(ReturnCode::Succeeded(old.show_diff(&new)))
+            Ok(ActionSummary::Diff(old.show_diff(&new)))
         }
     }
 }
 
 fn main() {
     ::std::process::exit(match run_app() {
-       Ok(return_code) => match return_code {
-           ReturnCode::Succeeded(diff_code) => diff_code as i32,
-           _ => 0,
+       Ok(action_summary) => match action_summary {
+           ActionSummary::Built => 0,
+           ActionSummary::Diff(DiffSummary::NoChanges) => 0,
+           ActionSummary::Diff(DiffSummary::Changes) => 1,
+           ActionSummary::Diff(DiffSummary::Suspicious) => 2,
        },
        Err(err) => {
            writeln!(io::stderr(), "error: {:?}", err).unwrap();

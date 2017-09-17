@@ -212,14 +212,14 @@ pub struct MetricsDiff {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum DiffCode {
-    NoChanges = 0,
-    Changes = 1,
-    Suspicious = 2,
+pub enum DiffSummary {
+    NoChanges,
+    Changes,
+    Suspicious,
 }
 
 impl EntryDiff {
-    fn show_diff(&self, path: &PathBuf, depth: usize) -> DiffCode {
+    fn show_diff(&self, path: &PathBuf, depth: usize) -> DiffSummary {
         match *self {
             EntryDiff::Directory(ref entries, ref diff) => {
                 if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
@@ -230,15 +230,15 @@ impl EntryDiff {
                              diff.added,
                              diff.removed,
                              diff.unchanged);
-                    let mut diff_code = DiffCode::Changes;
+                    let mut diff_summary = DiffSummary::Changes;
                     for (key, entry) in entries.iter() {
-                        if entry.show_diff(key, depth + 1) == DiffCode::Suspicious {
-                            diff_code = DiffCode::Suspicious;
+                        if entry.show_diff(key, depth + 1) == DiffSummary::Suspicious {
+                            diff_summary = DiffSummary::Suspicious;
                         }
                     }
-                    diff_code
+                    diff_summary
                 } else {
-                    DiffCode::NoChanges
+                    DiffSummary::NoChanges
                 }
             }
             EntryDiff::File(ref diff) => {
@@ -258,15 +258,15 @@ impl EntryDiff {
                         println!("{}> suspicious: original had no non-ASCII bytes, but now does",
                                  "##".repeat(depth));
                     }
-                    DiffCode::Suspicious
+                    DiffSummary::Suspicious
                 } else if diff.changed_content {
-                    DiffCode::Changes
+                    DiffSummary::Changes
                 } else {
-                    DiffCode::NoChanges
+                    DiffSummary::NoChanges
                 }
             }
             EntryDiff::KindChanged => {
-                DiffCode::Changes
+                DiffSummary::Changes
             }
         }
     }
@@ -420,12 +420,12 @@ impl Database {
         Ok(database.clone())
     }
 
-    pub fn show_diff(&self, other: &Database) -> DiffCode {
+    pub fn show_diff(&self, other: &Database) -> DiffSummary {
         let diff = self.diff(other);
         diff.show_diff(&Path::new(".").to_owned(), 0)
     }
 
-    pub fn check<P>(&self, root: P, threads: usize) -> Result<DiffCode, error::Error>
+    pub fn check<P>(&self, root: P, threads: usize) -> Result<DiffSummary, error::Error>
     where
         P: AsRef<Path>,
     {
