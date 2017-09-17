@@ -3,6 +3,11 @@ name = "integrity-checker"
 version = "0.1.0"
 authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 
+[features]
+default = []
+
+blake2b = ["blake2"]
+
 [dependencies]
 clap = "2.26"
 ignore = "0.2"
@@ -17,4 +22,4 @@ rmp-serde = "0.13"
 
 digest = "0.6"
 sha2 = "0.6"
-blake2 = "0.6"
+blake2 = { version = "0.6", optional = true }
