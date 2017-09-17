@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 
 [dependencies]
-clap = "2.23"
+clap = "2.26"
 ignore = "0.2"
 time = "0.1"
 
