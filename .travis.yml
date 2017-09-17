@@ -12,7 +12,6 @@ cache:
 #   - cargo +nightly install --force rustfmt-nightly
 
 script:
-  - cargo clean
   # - cargo +nightly fmt -- --write-mode=diff
   - cargo build
   - cargo test
