@@ -242,7 +242,7 @@ impl EntryDiff {
                              diff.removed,
                              diff.unchanged);
                     for (key, entry) in entries.iter() {
-                        entry.show_diff(key, depth + 1);
+                        entry.show_diff(key, depth+1);
                     }
                 }
             }
