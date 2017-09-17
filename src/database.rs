@@ -211,8 +211,15 @@ pub struct MetricsDiff {
     changed_nonascii: bool,
 }
 
+#[derive(Debug, PartialEq)]
+pub enum DiffCode {
+    NoChanges = 0,
+    Changes = 1,
+    Suspicious = 2,
+}
+
 impl EntryDiff {
-    fn show_diff(&self, path: &PathBuf, depth: usize) {
+    fn show_diff(&self, path: &PathBuf, depth: usize) -> DiffCode {
         match *self {
             EntryDiff::Directory(ref entries, ref diff) => {
                 if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
@@ -223,9 +230,15 @@ impl EntryDiff {
                              diff.added,
                              diff.removed,
                              diff.unchanged);
+                    let mut diff_code = DiffCode::Changes;
                     for (key, entry) in entries.iter() {
-                        entry.show_diff(key, depth+1);
+                        if entry.show_diff(key, depth + 1) == DiffCode::Suspicious {
+                            diff_code = DiffCode::Suspicious;
+                        }
                     }
+                    diff_code
+                } else {
+                    DiffCode::NoChanges
                 }
             }
             EntryDiff::File(ref diff) => {
@@ -245,9 +258,15 @@ impl EntryDiff {
                         println!("{}> suspicious: original had no non-ASCII bytes, but now does",
                                  "##".repeat(depth));
                     }
+                    DiffCode::Suspicious
+                } else if diff.changed_content {
+                    DiffCode::Changes
+                } else {
+                    DiffCode::NoChanges
                 }
             }
             EntryDiff::KindChanged => {
+                DiffCode::Changes
             }
         }
     }
@@ -401,20 +420,19 @@ impl Database {
         Ok(database.clone())
     }
 
-    pub fn show_diff(&self, other: &Database) {
+    pub fn show_diff(&self, other: &Database) -> DiffCode {
         let diff = self.diff(other);
-        diff.show_diff(&Path::new(".").to_owned(), 0);
+        diff.show_diff(&Path::new(".").to_owned(), 0)
     }
 
-    pub fn check<P>(&self, root: P, threads: usize) -> Result<(), error::Error>
+    pub fn check<P>(&self, root: P, threads: usize) -> Result<DiffCode, error::Error>
     where
         P: AsRef<Path>,
     {
         // FIXME: This is non-interactive, but vastly simply than
         // trying to implement the same functionality interactively.
         let other = Database::build(root, false, threads)?;
-        self.show_diff(&other);
-        Ok(())
+        Ok(self.show_diff(&other))
     }
 
     pub fn load_json<P>(path: P) -> Result<Database, error::Error>
