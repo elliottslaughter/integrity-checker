@@ -55,3 +55,21 @@ fn changes_delete() {
     let result = diff("tests/changes_delete");
     assert_eq!(result, DiffSummary::Changes);
 }
+
+#[test]
+fn suspicious_truncate() {
+    let result = diff("tests/suspicious_truncate");
+    assert_eq!(result, DiffSummary::Suspicious);
+}
+
+#[test]
+fn suspicious_nul() {
+    let result = diff("tests/suspicious_nul");
+    assert_eq!(result, DiffSummary::Suspicious);
+}
+
+#[test]
+fn suspicious_nonascii() {
+    let result = diff("tests/suspicious_nonascii");
+    assert_eq!(result, DiffSummary::Suspicious);
+}
