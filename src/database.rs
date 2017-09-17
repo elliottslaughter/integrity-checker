@@ -272,11 +272,17 @@ impl EntryDiff {
 
     fn summarize_diff(&self) -> DiffSummary {
         match *self {
-            EntryDiff::Directory(ref entries, ref _diff) => {
+            EntryDiff::Directory(ref entries, ref diff) => {
+                let initial =
+                    if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
+                        DiffSummary::Changes
+                    } else {
+                        DiffSummary::NoChanges
+                    };
                 entries
                     .values()
                     .map(|x| x.summarize_diff())
-                    .fold(DiffSummary::NoChanges, |acc, x| acc.meet(x))
+                    .fold(initial, |acc, x| acc.meet(x))
             }
             EntryDiff::File(ref diff) => {
                 if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
