@@ -12,7 +12,6 @@ use digest::VariableOutput;
 use ignore::{WalkBuilder, WalkState};
 use time;
 
-use serde_bytes;
 #[cfg(feature = "cbor")]
 use serde_cbor;
 #[cfg(feature = "json")]
@@ -24,6 +23,7 @@ use sha2;
 #[cfg(feature = "blake2b")]
 use blake2;
 
+use base64;
 use error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -52,7 +52,7 @@ pub struct Metrics {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub struct HashSum(#[serde(with = "serde_bytes")] Vec<u8>);
+pub struct HashSum(#[serde(with = "base64")] Vec<u8>);
 
 #[derive(Default)]
 struct EngineSize(u64);

@@ -4,7 +4,6 @@ extern crate time;
 #[macro_use]
 extern crate serde_derive;
 
-extern crate serde_bytes;
 #[cfg(feature = "cbor")]
 extern crate serde_cbor;
 #[cfg(feature = "json")]
@@ -19,3 +18,4 @@ extern crate blake2;
 
 pub mod database;
 pub mod error;
+mod base64;

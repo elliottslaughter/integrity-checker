@@ -19,8 +19,9 @@ clap = "2.26"
 ignore = "0.2"
 time = "0.1"
 
+base64 = "0.6"
+
 serde = "1.0"
-serde_bytes = "0.10"
 serde_derive = "1.0"
 
 serde_cbor = { version = "0.6", optional = true }
