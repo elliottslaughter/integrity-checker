@@ -21,6 +21,25 @@ use blake2;
 use base64;
 use error;
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DatabaseChecksum {
+    sha2: HashSum,
+    #[cfg(feature = "blake2b")]
+    blake2: HashSum,
+    size: u64,
+}
+
+impl From<Metrics> for DatabaseChecksum {
+    fn from(metrics: Metrics) -> Self {
+        DatabaseChecksum {
+            sha2: metrics.sha2,
+            #[cfg(feature = "blake2b")]
+            blake2: metrics.blake2,
+            size: metrics.size,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Database(Entry);
 
@@ -478,17 +497,53 @@ impl Database {
     where
         P: AsRef<Path>
     {
-        let f = File::open(path)?;
-        Ok(serde_json::from_reader(f)?)
+        // Read entire file contents to memory
+        let mut f = File::open(path)?;
+        let mut bytes = Vec::new();
+        f.read_to_end(&mut bytes)?;
+        let bytes = bytes;
+
+        // Find position of separator \n (byte 0x0a)
+        let index = bytes.iter().position(|&x| x == 0x0a).unwrap();
+
+        // Decode expected checksums
+        let expected : DatabaseChecksum =
+            serde_json::from_slice(&bytes[..index])?;
+
+        // Compute actual checksums of database
+        let mut engines = Engines::default();
+        engines.input(&bytes[index+1..]);
+        let actual: DatabaseChecksum = engines.result().into();
+
+        if expected != actual {
+            return Err(error::Error::ChecksumMismatch);
+        }
+
+        // Continue decoding database
+        Ok(serde_json::from_slice(&bytes[index+1..])?)
     }
 
     pub fn dump_json<P>(&self, path: P) -> Result<(), error::Error>
     where
         P: AsRef<Path>
     {
-        let json = serde_json::to_string(self)?;
+        // Important: The encoded JSON **must not** contain a \n character,
+        // or else the format will break
+
+        // Generate JSON-encoded database
+        let db_json = serde_json::to_vec(self)?;
+
+        // Compute checksums of encoded JSON
+        let mut engines = Engines::default();
+        engines.input(&db_json[..]);
+        let checksum: DatabaseChecksum = engines.result().into();
+        let checksum_json = serde_json::to_vec(&checksum)?;
+
+        // Write checksum and database separated by \n
         let mut f = File::create(path)?;
-        write!(f, "{}", json)?;
+        f.write(&checksum_json[..])?;
+        f.write(&vec![0x0a][..])?; // Use \n (byte 0x0a) as separator
+        f.write(&db_json)?;
         Ok(())
     }
 }

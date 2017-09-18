@@ -16,3 +16,4 @@ script:
   - cargo build
   - cargo test
   - cargo run -- build db README.md
+  - cargo run -- check db README.md

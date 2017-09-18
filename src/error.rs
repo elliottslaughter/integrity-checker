@@ -8,6 +8,7 @@ pub enum Error {
     StripPrefix(std::path::StripPrefixError),
     Ignore(ignore::Error),
     Json(serde_json::Error),
+    ChecksumMismatch,
 }
 
 impl From<std::io::Error> for Error {

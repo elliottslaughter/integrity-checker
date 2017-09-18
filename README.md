@@ -51,9 +51,6 @@ See the [format description](FORMAT.md).
 
 ## TODO
 
-  * Checksum the database itself (i.e. encode the database in memory,
-    compute checksum(s), and write the database prefixed by size and
-    checksum(s))
   * Consider whether compression of the database should be included
   * Traverse files in parallel when building the initial database
   * Measure performance and see if any of the major components (e.g. the
