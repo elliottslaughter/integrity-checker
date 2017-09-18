@@ -4,12 +4,7 @@ extern crate time;
 #[macro_use]
 extern crate serde_derive;
 
-#[cfg(feature = "cbor")]
-extern crate serde_cbor;
-#[cfg(feature = "json")]
 extern crate serde_json;
-#[cfg(feature = "msgpack")]
-extern crate rmp_serde;
 
 extern crate digest;
 extern crate sha2;

@@ -1,11 +1,6 @@
 extern crate clap;
 
-#[cfg(feature = "cbor")]
-extern crate serde_cbor;
-#[cfg(feature = "json")]
 extern crate serde_json;
-#[cfg(feature = "msgpack")]
-extern crate rmp_serde;
 
 extern crate integrity_checker;
 
@@ -112,44 +107,12 @@ fn driver() -> Result<ActionSummary, error::Error> {
         Action::Build { db_path, dir_path, threads } => {
             let database = Database::build(&dir_path, true, threads)?;
 
-            #[cfg(feature = "json")]
             {
                 let mut json_path = PathBuf::from(&db_path);
                 json_path.set_extension("json");
                 database.dump_json(json_path)?;
             }
 
-            #[cfg(feature = "cbor")]
-            {
-                let mut cbor_path = PathBuf::from(&db_path);
-                cbor_path.set_extension("cbor");
-                database.dump_cbor(cbor_path)?;
-            }
-
-            #[cfg(feature = "msgpack")]
-            {
-                let mut msgpack_path = PathBuf::from(&db_path);
-                msgpack_path.set_extension("msgpack");
-                database.dump_msgpack(msgpack_path)?;
-            }
-
-            #[cfg(feature = "json")]
-            {
-                let json = serde_json::to_string(&database)?;
-                println!("JSON bytes: {}", json.len());
-            }
-
-            #[cfg(feature = "cbor")]
-            {
-                let cbor = serde_cbor::to_vec(&database)?;
-                println!("CBOR bytes: {}", cbor.len());
-            }
-
-            #[cfg(feature = "msgpack")]
-            {
-                let msgpack = rmp_serde::to_vec(&database)?;
-                println!("MsgPack bytes: {}", msgpack.len());
-            }
             Ok(ActionSummary::Built)
         }
         Action::Check { db_path, dir_path, threads } => {

@@ -3,6 +3,7 @@
 
 extern crate serde;
 extern crate base64;
+
 use self::serde::{Serializer, de, Deserialize, Deserializer};
 
 pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
