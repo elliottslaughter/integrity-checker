@@ -181,7 +181,7 @@ impl Entry {
                 let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
                 let rest = components.as_path().to_owned();
                 if count > 1 {
-                    let mut subentry = entries.get_default(first);
+                    let subentry = entries.get_default(first);
                     subentry.insert(rest, file);
                 } else {
                     match entries.insert(first, file) {
