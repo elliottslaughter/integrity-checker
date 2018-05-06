@@ -403,6 +403,8 @@ impl Entry {
     }
 }
 
+const SEP : u8 = 0x0a; // separator \n (byte 0x0a) used in JSON encoding
+
 impl Database {
     fn insert(&mut self, path: PathBuf, entry: Entry) {
         self.0.insert(path, entry);
@@ -503,8 +505,8 @@ impl Database {
         f.read_to_end(&mut bytes)?;
         let bytes = bytes;
 
-        // Find position of separator \n (byte 0x0a)
-        let index = bytes.iter().position(|&x| x == 0x0a).unwrap();
+        // Find position of separator
+        let index = bytes.iter().position(|&x| x == SEP).unwrap();
 
         // Decode expected checksums
         let expected : DatabaseChecksum =
@@ -539,10 +541,13 @@ impl Database {
         let checksum: DatabaseChecksum = engines.result().into();
         let checksum_json = serde_json::to_vec(&checksum)?;
 
-        // Write checksum and database separated by \n
+        // Make sure encoded JSON does not include separator
+        assert!(!checksum_json.contains(&SEP));
+
+        // Write checksum, separator and database
         let mut f = File::create(path)?;
         f.write(&checksum_json[..])?;
-        f.write(&vec![0x0a][..])?; // Use \n (byte 0x0a) as separator
+        f.write(&vec![SEP][..])?;
         f.write(&db_json)?;
         Ok(())
     }
