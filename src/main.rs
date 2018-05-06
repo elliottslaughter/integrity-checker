@@ -109,7 +109,7 @@ fn driver() -> Result<ActionSummary, error::Error> {
 
             {
                 let mut json_path = PathBuf::from(&db_path);
-                json_path.set_extension("json");
+                json_path.set_extension("json.gz");
                 database.dump_json(json_path)?;
             }
 
@@ -117,15 +117,15 @@ fn driver() -> Result<ActionSummary, error::Error> {
         }
         Action::Check { db_path, dir_path, threads } => {
             let mut json_path = PathBuf::from(&db_path);
-            json_path.set_extension("json");
+            json_path.set_extension("json.gz");
             let database = Database::load_json(&json_path)?;
             Ok(ActionSummary::Diff(database.check(&dir_path, threads)?))
         }
         Action::Diff { old_path, new_path } => {
             let mut json_old_path = PathBuf::from(&old_path);
-            json_old_path.set_extension("json");
+            json_old_path.set_extension("json.gz");
             let mut json_new_path = PathBuf::from(&new_path);
-            json_new_path.set_extension("json");
+            json_new_path.set_extension("json.gz");
             let old = Database::load_json(&json_old_path)?;
             let new = Database::load_json(&json_new_path)?;
             Ok(ActionSummary::Diff(old.show_diff(&new)))

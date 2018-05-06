@@ -9,6 +9,7 @@ pub enum Error {
     Ignore(ignore::Error),
     Json(serde_json::Error),
     ChecksumMismatch,
+    ParseError,
 }
 
 impl From<std::io::Error> for Error {

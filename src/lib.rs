@@ -6,6 +6,8 @@ extern crate serde_derive;
 
 extern crate serde_json;
 
+extern crate flate2;
+
 extern crate digest;
 extern crate sha2;
 #[cfg(feature = "blake2b")]

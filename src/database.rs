@@ -14,6 +14,10 @@ use time;
 
 use serde_json;
 
+use flate2::Compression;
+use flate2::read::GzDecoder;
+use flate2::write::GzEncoder;
+
 use sha2;
 #[cfg(feature = "blake2b")]
 use blake2;
@@ -500,13 +504,18 @@ impl Database {
         P: AsRef<Path>
     {
         // Read entire file contents to memory
-        let mut f = File::open(path)?;
+        let f = File::open(path)?;
+        let mut d = GzDecoder::new(f);
+
         let mut bytes = Vec::new();
-        f.read_to_end(&mut bytes)?;
+        d.read_to_end(&mut bytes)?;
         let bytes = bytes;
 
         // Find position of separator
-        let index = bytes.iter().position(|&x| x == SEP).unwrap();
+        let index = match bytes.iter().position(|&x| x == SEP) {
+            Some(x) => x,
+            None => return Err(error::Error::ParseError),
+        };
 
         // Decode expected checksums
         let expected : DatabaseChecksum =
@@ -529,7 +538,7 @@ impl Database {
     where
         P: AsRef<Path>
     {
-        // Important: The encoded JSON **must not** contain a \n character,
+        // Important: The encoded JSON **must not** contain the separator,
         // or else the format will break
 
         // Generate JSON-encoded database
@@ -545,10 +554,12 @@ impl Database {
         assert!(!checksum_json.contains(&SEP));
 
         // Write checksum, separator and database
-        let mut f = File::create(path)?;
-        f.write(&checksum_json[..])?;
-        f.write(&vec![SEP][..])?;
-        f.write(&db_json)?;
+        let f = File::create(path)?;
+        let mut e = GzEncoder::new(f, Compression::default());
+        e.write_all(&checksum_json[..])?;
+        e.write_all(&vec![SEP][..])?;
+        e.write_all(&db_json)?;
+        e.finish()?;
         Ok(())
     }
 }
