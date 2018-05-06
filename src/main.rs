@@ -15,6 +15,7 @@ enum Action {
     Build { db_path: OsString, dir_path: OsString, threads: usize },
     Check { db_path: OsString, dir_path: OsString, threads: usize },
     Diff { old_path: OsString, new_path: OsString },
+    SelfCheck { db_path: OsString },
 }
 
 #[derive(Debug)]
@@ -70,6 +71,12 @@ fn parse_args() -> Action {
                          .help("Path of new integrity database")
                          .required(true)
                          .index(2)))
+        .subcommand(clap::SubCommand::with_name("selfcheck")
+                    .about("Check the internal consistency of an integrity database")
+                    .arg(clap::Arg::with_name("database")
+                         .help("Path of integrity database to create")
+                         .required(true)
+                         .index(1)))
         .after_help("RETURN CODE: \
                     \n    0       Success \
                     \n    1       Changes \
@@ -96,6 +103,9 @@ fn parse_args() -> Action {
         ("diff", Some(submatches)) => Action::Diff {
             old_path: submatches.value_of_os("old").unwrap().to_owned(),
             new_path: submatches.value_of_os("new").unwrap().to_owned(),
+        },
+        ("selfcheck", Some(submatches)) => Action::SelfCheck {
+            db_path: submatches.value_of_os("database").unwrap().to_owned(),
         },
         _ => unreachable!(),
     }
@@ -129,6 +139,12 @@ fn driver() -> Result<ActionSummary, error::Error> {
             let old = Database::load_json(&json_old_path)?;
             let new = Database::load_json(&json_new_path)?;
             Ok(ActionSummary::Diff(old.show_diff(&new)))
+        }
+        Action::SelfCheck { db_path } => {
+            let mut json_path = PathBuf::from(&db_path);
+            json_path.set_extension("json.gz");
+            Database::load_json(&json_path)?;
+            Ok(ActionSummary::Diff(DiffSummary::NoChanges))
         }
     }
 }
