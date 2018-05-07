@@ -17,3 +17,6 @@ script:
   - cargo test
   - cargo run -- build db README.md
   - cargo run -- check db README.md
+  - cargo run -- build db2 README.md
+  - cargo run -- diff db db2
+  - cargo run -- selfcheck db
