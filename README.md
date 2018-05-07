@@ -74,3 +74,4 @@ See the [format description](FORMAT.md).
   * Unit/integration tests
       * Test top-level command workflows
       * Test that database checksums work (i.e. modification to database or checksum results in error)
+  * Add a `-f` flag, and refuse to overwrite any file if it's not set
