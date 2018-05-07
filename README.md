@@ -51,8 +51,6 @@ See the [format description](FORMAT.md).
 
 ## TODO
 
-  * Consider whether compression of the database should be included
-  * Traverse files in parallel when building the initial database
   * Measure performance and see if any of the major components (e.g. the
     checksums) are CPU-bound and can be made to run any faster
   * Check the results on real-world backups and see if anything can be done
@@ -74,4 +72,5 @@ See the [format description](FORMAT.md).
   * Unit/integration tests
       * Test top-level command workflows
       * Test that database checksums work (i.e. modification to database or checksum results in error)
+      * Test long-term stability of the format (i.e. older databases can be read and used)
   * Add a `-f` flag, and refuse to overwrite any file if it's not set
