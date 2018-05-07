@@ -3,6 +3,7 @@
 
 *.json
 *.cbor
+*.gz
 
 *.bk
 
