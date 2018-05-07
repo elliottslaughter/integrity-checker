@@ -24,3 +24,11 @@ flate2 = "1.0"
 digest = "0.7"
 sha2 = "0.7"
 blake2 = { version = "0.7", optional = true }
+
+[dev-dependencies]
+criterion = "0.2"
+tempfile = "3"
+
+[[bench]]
+name = "build"
+harness = false
