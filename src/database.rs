@@ -555,7 +555,7 @@ impl Database {
 
         // Write checksum, separator and database
         let f = File::create(path)?;
-        let mut e = GzEncoder::new(f, Compression::default());
+        let mut e = GzEncoder::new(f, Compression::best());
         e.write_all(&checksum_json[..])?;
         e.write_all(&vec![SEP][..])?;
         e.write_all(&db_json)?;
