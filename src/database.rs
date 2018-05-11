@@ -139,10 +139,7 @@ impl Engines {
     }
 }
 
-fn compute_metrics<P>(path: P) -> Result<Metrics, error::Error>
-where
-    P: AsRef<Path>
-{
+fn compute_metrics(path: impl AsRef<Path>) -> Result<Metrics, error::Error> {
     let mut f = File::open(path)?;
 
     let mut engines = Engines::default();
