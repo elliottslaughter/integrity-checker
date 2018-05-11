@@ -4,10 +4,7 @@ use std::path::{Path, PathBuf};
 
 use integrity_checker::database::{Database, DiffSummary};
 
-fn diff<P>(root_dir: P) -> DiffSummary
-where
-    P: AsRef<Path>,
-{
+fn diff(root_dir: impl AsRef<Path>) -> DiffSummary {
     let mut before_path = PathBuf::from(root_dir.as_ref());
     before_path.push("before");
 

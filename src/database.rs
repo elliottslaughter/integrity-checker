@@ -422,10 +422,11 @@ impl Database {
         self.0.diff(&other.0)
     }
 
-    pub fn build<P>(root: P, verbose: bool, threads: usize) -> Result<Database, error::Error>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn build(
+        root: impl AsRef<Path>,
+        verbose: bool,
+        threads: usize,
+    ) -> Result<Database, error::Error> {
         let total_bytes = Arc::new(Mutex::new(0));
         let database = Arc::new(Mutex::new(Database::default()));
         let start_time_ns = time::precise_time_ns();
@@ -489,20 +490,18 @@ impl Database {
         diff.summarize_diff()
     }
 
-    pub fn check<P>(&self, root: P, threads: usize) -> Result<DiffSummary, error::Error>
-    where
-        P: AsRef<Path>,
-    {
-        // FIXME: This is non-interactive, but vastly simply than
+    pub fn check(
+        &self,
+        root: impl AsRef<Path>,
+        threads: usize
+    ) -> Result<DiffSummary, error::Error> {
+        // FIXME: This is non-interactive, but vastly more simple than
         // trying to implement the same functionality interactively.
         let other = Database::build(root, false, threads)?;
         Ok(self.show_diff(&other))
     }
 
-    pub fn load_json<P>(path: P) -> Result<Database, error::Error>
-    where
-        P: AsRef<Path>
-    {
+    pub fn load_json(path: impl AsRef<Path>) -> Result<Database, error::Error> {
         // Read entire file contents to memory
         let f = File::open(path)?;
         let mut d = GzDecoder::new(f);
@@ -534,10 +533,7 @@ impl Database {
         Ok(serde_json::from_slice(&bytes[index+1..])?)
     }
 
-    pub fn dump_json<P>(&self, path: P) -> Result<(), error::Error>
-    where
-        P: AsRef<Path>
-    {
+    pub fn dump_json(&self, path: impl AsRef<Path>) -> Result<(), error::Error> {
         // Important: The encoded JSON **must not** contain the separator,
         // or else the format will break
 
