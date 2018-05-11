@@ -179,7 +179,7 @@ impl Entry {
         // any duplicates. (And the database, after construction, is
         // always immutable.)
         match self {
-            &mut Entry::Directory(ref mut entries) => {
+            Entry::Directory(entries) => {
                 let mut components = path.components();
                 let count = components.clone().count();
                 let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
@@ -194,13 +194,13 @@ impl Entry {
                     }
                 }
             }
-            &mut Entry::File(_) => unreachable!()
+            Entry::File(_) => unreachable!()
         }
     }
 
     fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
-        match *self {
-            Entry::Directory(ref entries) => {
+        match self {
+            Entry::Directory(entries) => {
                 let mut components = path.components();
                 let count = components.clone().count();
                 let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
@@ -249,8 +249,8 @@ pub enum DiffSummary {
 
 impl EntryDiff {
     fn show_diff(&self, path: &PathBuf, depth: usize) {
-        match *self {
-            EntryDiff::Directory(ref entries, ref diff) => {
+        match self {
+            EntryDiff::Directory(entries, diff) => {
                 if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
                     println!("{}{}: {} changed, {} added, {} removed, {} unchanged",
                              "| ".repeat(depth),
@@ -264,7 +264,7 @@ impl EntryDiff {
                     }
                 }
             }
-            EntryDiff::File(ref diff) => {
+            EntryDiff::File(diff) => {
                 if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
                     println!("{}{} changed",
                              "| ".repeat(depth),
@@ -289,8 +289,8 @@ impl EntryDiff {
     }
 
     fn summarize_diff(&self) -> DiffSummary {
-        match *self {
-            EntryDiff::Directory(ref entries, ref diff) => {
+        match self {
+            EntryDiff::Directory(entries, diff) => {
                 let initial =
                     if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
                         DiffSummary::Changes
@@ -302,7 +302,7 @@ impl EntryDiff {
                     .map(|x| x.summarize_diff())
                     .fold(initial, |acc, x| acc.meet(x))
             }
-            EntryDiff::File(ref diff) => {
+            EntryDiff::File(diff) => {
                 if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
                     DiffSummary::Suspicious
                 } else if diff.changed_content {
@@ -333,7 +333,7 @@ impl DiffSummary {
 impl Entry {
     fn diff(&self, other: &Entry) -> EntryDiff {
         match (self, other) {
-            (&Entry::Directory(ref old), &Entry::Directory(ref new)) => {
+            (Entry::Directory(old), Entry::Directory(new)) => {
                 let mut entries = BTreeMap::default();
                 let mut added = 0;
                 let mut removed = 0;
@@ -388,7 +388,7 @@ impl Entry {
                     entries,
                     DirectoryDiff { added, removed, changed, unchanged })
             },
-            (&Entry::File(ref old), &Entry::File(ref new)) => {
+            (Entry::File(old), Entry::File(new)) => {
                 let changed = old.size != new.size;
                 let changed = changed || old.sha2 != new.sha2;
                 #[cfg(feature = "blake2b")]
