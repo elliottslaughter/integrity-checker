@@ -498,10 +498,9 @@ impl Database {
         Ok(self.show_diff(&other))
     }
 
-    pub fn load_json(path: impl AsRef<Path>) -> Result<Database, error::Error> {
-        // Read entire file contents to memory
-        let f = File::open(path)?;
-        let mut d = GzDecoder::new(f);
+    pub fn load_json(r: impl Read) -> Result<Database, error::Error> {
+        // Read entire contents to memory
+        let mut d = GzDecoder::new(r);
 
         let mut bytes = Vec::new();
         d.read_to_end(&mut bytes)?;
@@ -530,7 +529,7 @@ impl Database {
         Ok(serde_json::from_slice(&bytes[index+1..])?)
     }
 
-    pub fn dump_json(&self, path: impl AsRef<Path>) -> Result<(), error::Error> {
+    pub fn dump_json(&self, w: impl Write) -> Result<(), error::Error> {
         // Important: The encoded JSON **must not** contain the separator,
         // or else the format will break
 
@@ -547,8 +546,7 @@ impl Database {
         assert!(!checksum_json.contains(&SEP));
 
         // Write checksum, separator and database
-        let f = File::create(path)?;
-        let mut e = GzEncoder::new(f, Compression::best());
+        let mut e = GzEncoder::new(w, Compression::best());
         e.write_all(&checksum_json[..])?;
         e.write_all(&vec![SEP][..])?;
         e.write_all(&db_json)?;

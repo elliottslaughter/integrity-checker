@@ -5,6 +5,7 @@ extern crate serde_json;
 extern crate integrity_checker;
 
 use std::ffi::OsString;
+use std::fs::File;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
@@ -120,7 +121,8 @@ fn driver() -> Result<ActionSummary, error::Error> {
             {
                 let mut json_path = PathBuf::from(&db_path);
                 json_path.set_extension("json.gz");
-                database.dump_json(json_path)?;
+                let f = File::create(json_path)?;
+                database.dump_json(f)?;
             }
 
             Ok(ActionSummary::Built)
@@ -128,7 +130,8 @@ fn driver() -> Result<ActionSummary, error::Error> {
         Action::Check { db_path, dir_path, threads } => {
             let mut json_path = PathBuf::from(&db_path);
             json_path.set_extension("json.gz");
-            let database = Database::load_json(&json_path)?;
+            let f = File::open(json_path)?;
+            let database = Database::load_json(f)?;
             Ok(ActionSummary::Diff(database.check(&dir_path, threads)?))
         }
         Action::Diff { old_path, new_path } => {
@@ -136,14 +139,17 @@ fn driver() -> Result<ActionSummary, error::Error> {
             json_old_path.set_extension("json.gz");
             let mut json_new_path = PathBuf::from(&new_path);
             json_new_path.set_extension("json.gz");
-            let old = Database::load_json(&json_old_path)?;
-            let new = Database::load_json(&json_new_path)?;
+            let f_old = File::open(json_old_path)?;
+            let f_new = File::open(json_new_path)?;
+            let old = Database::load_json(f_old)?;
+            let new = Database::load_json(f_new)?;
             Ok(ActionSummary::Diff(old.show_diff(&new)))
         }
         Action::SelfCheck { db_path } => {
             let mut json_path = PathBuf::from(&db_path);
             json_path.set_extension("json.gz");
-            Database::load_json(&json_path)?;
+            let f = File::open(json_path)?;
+            Database::load_json(f)?;
             Ok(ActionSummary::Diff(DiffSummary::NoChanges))
         }
     }
