@@ -20,10 +20,10 @@
       "minimum": 0
     },
     "nul": {
-      "type": "boolean",
+      "type": "boolean"
     },
     "nonascii": {
-      "type": "boolean",
+      "type": "boolean"
     },
 
     "$comment": "object types",
@@ -36,7 +36,7 @@
           "additionalProperties": {
             "anyOf": [
               { "$ref": "#/definitions/directory" },
-              { "$ref": "#/definitions/file" },
+              { "$ref": "#/definitions/file" }
             ]
           }
         }
@@ -54,7 +54,7 @@
             "blake2": { "$ref": "#/definitions/blake2" },
             "size": { "$ref": "#/definitions/size" },
             "nul": { "$ref": "#/definitions/nul" },
-            "nonascii": { "$ref": "#/definitions/nonascii" },
+            "nonascii": { "$ref": "#/definitions/nonascii" }
           }
         }
       }

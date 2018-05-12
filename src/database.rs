@@ -529,7 +529,10 @@ impl Database {
         Ok(serde_json::from_slice(&bytes[index+1..])?)
     }
 
-    pub fn dump_json(&self, w: impl Write) -> Result<(), error::Error> {
+    pub fn dump_json<W>(&self, w: W) -> Result<W, error::Error>
+    where
+        W: Write
+    {
         // Important: The encoded JSON **must not** contain the separator,
         // or else the format will break
 
@@ -550,8 +553,7 @@ impl Database {
         e.write_all(&checksum_json[..])?;
         e.write_all(&vec![SEP][..])?;
         e.write_all(&db_json)?;
-        e.finish()?;
-        Ok(())
+        Ok(e.finish()?)
     }
 }
 
