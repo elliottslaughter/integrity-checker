@@ -10,7 +10,7 @@ extern crate valico;
 
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use integrity_checker::database::Database;
 use integrity_checker::error::Error;
@@ -34,21 +34,15 @@ fn validate_schema(data: &[u8], schema_path: impl AsRef<Path>) -> Result<bool, E
     Ok(schema.validate(&instance).is_valid())
 }
 
-fn validate(root_dir: impl AsRef<Path>) -> Result<bool, Error> {
-    let mut before_path = PathBuf::from(root_dir.as_ref());
-    before_path.push("before");
-
-    let mut after_path = PathBuf::from(root_dir.as_ref());
-    after_path.push("after");
-
+fn validate(path: impl AsRef<Path>) -> Result<bool, Error> {
     let threads = 1;
-    let before_db = Database::build(&before_path, false, threads)?;
+    let db = Database::build(&path, false, threads)?;
 
     // Dump the databse to a temporary file and read it back so that
     // we can be 100% we're doing everything the same was as the main
     // client.
     let f = tempfile()?;
-    let mut f = before_db.dump_json(f)?;
+    let mut f = db.dump_json(f)?;
     f.seek(SeekFrom::Start(0))?;
     let mut d = GzDecoder::new(f);
     let mut bytes = Vec::new();
@@ -68,45 +62,54 @@ fn validate(root_dir: impl AsRef<Path>) -> Result<bool, Error> {
 
 #[test]
 fn no_changes() {
-    assert!(validate("tests/nochanges").unwrap());
+    assert!(validate("tests/nochanges/before").unwrap());
+    assert!(validate("tests/nochanges/after").unwrap());
 }
 
 #[test]
 fn changes_edit() {
-    assert!(validate("tests/changes_edit").unwrap());
+    assert!(validate("tests/changes_edit/before").unwrap());
+    assert!(validate("tests/changes_edit/after").unwrap());
 }
 
 #[test]
 fn changes_new() {
-    assert!(validate("tests/changes_new").unwrap());
+    assert!(validate("tests/changes_new/before").unwrap());
+    assert!(validate("tests/changes_new/after").unwrap());
 }
 
 #[test]
 fn changes_edit_bin() {
-    assert!(validate("tests/changes_edit_bin").unwrap());
+    assert!(validate("tests/changes_edit_bin/before").unwrap());
+    assert!(validate("tests/changes_edit_bin/after").unwrap());
 }
 
 #[test]
 fn changes_new_bin() {
-    assert!(validate("tests/changes_new_bin").unwrap());
+    assert!(validate("tests/changes_new_bin/before").unwrap());
+    assert!(validate("tests/changes_new_bin/after").unwrap());
 }
 
 #[test]
 fn changes_delete() {
-    assert!(validate("tests/changes_delete").unwrap());
+    assert!(validate("tests/changes_delete/before").unwrap());
+    assert!(validate("tests/changes_delete/after").unwrap());
 }
 
 #[test]
 fn suspicious_truncate() {
-    assert!(validate("tests/suspicious_truncate").unwrap());
+    assert!(validate("tests/suspicious_truncate/before").unwrap());
+    assert!(validate("tests/suspicious_truncate/after").unwrap());
 }
 
 #[test]
 fn suspicious_nul() {
-    assert!(validate("tests/suspicious_nul").unwrap());
+    assert!(validate("tests/suspicious_nul/before").unwrap());
+    assert!(validate("tests/suspicious_nul/after").unwrap());
 }
 
 #[test]
 fn suspicious_nonascii() {
-    assert!(validate("tests/suspicious_nonascii").unwrap());
+    assert!(validate("tests/suspicious_nonascii/before").unwrap());
+    assert!(validate("tests/suspicious_nonascii/after").unwrap());
 }
