@@ -1,21 +1,19 @@
 # Backup Integrity Checker [![Build Status](https://travis-ci.org/elliottslaughter/integrity-checker.svg?branch=master)](https://travis-ci.org/elliottslaughter/integrity-checker)
 
-This tool is (or will be) an integrity checker for backups. The vast
-majority of the functionality is currently missing, but the intention
-is to do the following:
+This tool is an integrity checker for backups and continuously synced filesystems:
 
-  * Given a directory, the tools should walk recursively walk files in
-    the directory and construct a database of metadata (hashes, size,
-    timestamps, etc.) of all. The database itself should of course be
-    checksummed as well.
+  * Given a directory, the tools constructs a database of metadata
+    (hashes, sizes, timestamps, etc.) of the contents. The database
+    itself is of course checksummed as well.
 
   * Given two databases, or a database and a directory, the tool
-    should iterate the entries and print a *helpful* summary of the
-    differences between them. For example, the tool should highlight
+    iterates the entries and prints a *helpful* summary of the
+    differences between them. For example, the tool highlights
     suspicious patterns, such as files which got truncated (had
     non-zero size, and now have zero size) or have other patterns that
     could indicate corruption (e.g. the presence of NUL bytes, if the
-    file originally had none).
+    file originally had none). Surfacing useful data while minimizing
+    false positives is an ongoing effort.
 
 Here are a couple sample use cases:
 
@@ -31,7 +29,13 @@ Here are a couple sample use cases:
     modifying files behind your back. By recording databases
     periodically, you can sanity check that directories that shouldn't
     change often are in fact not changing. (Note: For this to be
-    useful, the tool has to be very good at summarizing differences.)
+    useful, the tool has to be very good at minimizing false positives.)
+
+  * This also applies to any life filesystem. Consider that a typical
+    user will maintain continuity of data across possibly decades of
+    hardware and filesystem upgrades. Every transition is an
+    opportunity for silent data corruption. Better to be safe than
+    sorry.
 
 ## Format
 
@@ -42,12 +46,15 @@ See the [format description](FORMAT.md).
   * Isn't this better served by existing tools? ZFS, Tarsnap,
     etc. should never corrupt your data.
 
-    Well, it depends. In general, defense in depth is good, even with
-    relatively trustworthy tools such as ZFS and Tarsnap. Also, in the
-    continuous sync use case, even with backups, it can often be
-    difficult to be assured that you haven't been subject to silent
-    data corruption. This tool can be part of a larger toolkit for
-    ensuring the validity of long-term storage.
+    Well, it depends. Not all users have access to a filesystem that
+    checksums file contents, or to a machine with ECC RAM, and even
+    the ones that do may experience filesystem bugs. In general,
+    defense in depth is good, even with relatively trustworthy tools
+    such as ZFS and Tarsnap. Also, in the continuous sync use case,
+    even with backups, it can often be difficult to be assured that
+    you haven't been subject to silent data corruption. This tool can
+    be part of a larger toolkit for ensuring the validity of long-term
+    storage.
 
 ## TODO
 
