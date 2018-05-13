@@ -54,6 +54,12 @@ fn changes_delete() {
 }
 
 #[test]
+fn changes_delete_dir() {
+    let result = diff("tests/changes_delete_dir");
+    assert_eq!(result, DiffSummary::Changes);
+}
+
+#[test]
 fn suspicious_truncate() {
     let result = diff("tests/suspicious_truncate");
     assert_eq!(result, DiffSummary::Suspicious);

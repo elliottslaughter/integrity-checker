@@ -97,6 +97,12 @@ fn changes_delete() {
 }
 
 #[test]
+fn changes_delete_dir() {
+    assert!(validate("tests/changes_delete_dir/before").unwrap());
+    assert!(validate("tests/changes_delete_dir/after").unwrap());
+}
+
+#[test]
 fn suspicious_truncate() {
     assert!(validate("tests/suspicious_truncate/before").unwrap());
     assert!(validate("tests/suspicious_truncate/after").unwrap());
