@@ -39,8 +39,8 @@ fn validate(path: impl AsRef<Path>) -> Result<bool, Error> {
     let db = Database::build(&path, false, threads)?;
 
     // Dump the databse to a temporary file and read it back so that
-    // we can be 100% we're doing everything the same was as the main
-    // client.
+    // we can be 100% sure we're doing everything the same way as the
+    // main client.
     let f = tempfile()?;
     let mut f = db.dump_json(f)?;
     f.seek(SeekFrom::Start(0))?;
