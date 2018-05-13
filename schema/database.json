@@ -40,7 +40,8 @@
             ]
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "file": {
       "type": "object",
@@ -55,9 +56,11 @@
             "size": { "$ref": "#/definitions/size" },
             "nul": { "$ref": "#/definitions/nul" },
             "nonascii": { "$ref": "#/definitions/nonascii" }
-          }
+          },
+          "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     }
   },
 
