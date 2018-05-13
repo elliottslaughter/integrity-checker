@@ -1,6 +1,6 @@
 # Backup Integrity Checker [![Build Status](https://travis-ci.org/elliottslaughter/integrity-checker.svg?branch=master)](https://travis-ci.org/elliottslaughter/integrity-checker)
 
-This tool is an integrity checker for backups and continuously synced filesystems:
+This tool is an integrity checker for backups and filesystems:
 
   * Given a directory, the tools constructs a database of metadata
     (hashes, sizes, timestamps, etc.) of the contents. The database
