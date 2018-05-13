@@ -37,7 +37,7 @@ Here are a couple sample use cases:
     opportunity for silent data corruption. Better to be safe than
     sorry.
 
-This tool is designed around an especially stable database format so
+The tool is designed around an especially stable database format so
 that if something were to happen, it would be relatively
 straightforward to recover the contained metadata.
 
