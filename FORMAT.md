@@ -1,7 +1,5 @@
 # Database Format
 
-TBD
-
 ## Goals
 
 Goals for the format, in order from most to least important:
@@ -16,6 +14,25 @@ Goals for the format, in order from most to least important:
     format.
 
   * Compactness: The format shouldn't waste excessive space.
+
+## Format Description
+
+The database is a gzip-encoded JSON blob. The decompressed contents
+consist of:
+
+ 1. A JSON-encoded object containing the database size and
+    checksum. [JSON Schema](schema/checksum.json)
+
+ 2. The byte `0xA` (i.e. the ASCII character `\n`).
+
+ 3. A JSON-encoded object containing the database contents.
+    [JSON Schema](schema/database.json)
+
+The format is designed to be agnostic to the hash algorithm
+used. Multiple algorithms may be used simultaneously. By default, the
+following algorithm is used:
+
+  * SHA-512/256
 
 ## Formats Considered
 
