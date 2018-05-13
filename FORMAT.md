@@ -34,7 +34,7 @@ following algorithm is used:
 
   * SHA-512/256
 
-## Formats Considered
+## Other Formats Considered
 
 Here are some formats under consideration:
 
