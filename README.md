@@ -31,7 +31,7 @@ Here are a couple sample use cases:
     change often are in fact not changing. (Note: For this to be
     useful, the tool has to be very good at minimizing false positives.)
 
-  * This also applies to any life filesystem. Consider that a typical
+    This also applies to any life filesystem. Consider that a typical
     user will maintain continuity of data across possibly decades of
     hardware and filesystem upgrades. Every transition is an
     opportunity for silent data corruption. Better to be safe than
