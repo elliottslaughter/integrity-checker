@@ -8,19 +8,23 @@ rust:
 cache:
   cargo: true
 
+env:
+  matrix:
+  - FEATURES=
+  - FEATURES=--features=blake2b
+
 # before_script:
 #   - cargo +nightly install --force rustfmt-nightly
 
 script:
   # - cargo +nightly fmt -- --write-mode=diff
-  - cargo build
-  - cargo test
-  - cargo test --features=blake2b
-  - cargo bench
-  - cargo run -- build db README.md
-  - cargo run -- check db README.md
-  - cargo run -- build db2 README.md
-  - "! cargo run -- build db README.md" # shouldn't overwrite
-  - cargo run -- build db README.md -f # should overwrite
-  - cargo run -- diff db db2
-  - cargo run -- selfcheck db
+  - cargo build $FEATURES
+  - cargo test $FEATURES
+  - cargo bench $FEATURES
+  - cargo run $FEATURES -- build db README.md
+  - cargo run $FEATURES -- check db README.md
+  - cargo run $FEATURES -- build db2 README.md
+  - "! cargo run $FEATURES -- build db README.md" # shouldn't overwrite
+  - cargo run $FEATURES -- build db README.md -f # should overwrite
+  - cargo run $FEATURES -- diff db db2
+  - cargo run $FEATURES -- selfcheck db
