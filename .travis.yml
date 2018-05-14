@@ -11,7 +11,8 @@ cache:
 env:
   matrix:
   - FEATURES=
-  - FEATURES=--features=blake2b
+  - FEATURES=--features=blake2b --no-default-features
+  - FEATURES=--features=sha2-512256,blake2b --no-default-features
 
 # before_script:
 #   - cargo +nightly install --force rustfmt-nightly

@@ -18,6 +18,7 @@ use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 
+#[cfg(feature = "sha2-512256")]
 use sha2;
 #[cfg(feature = "blake2b")]
 use blake2;
@@ -27,6 +28,7 @@ use error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DatabaseChecksum {
+    #[cfg(feature = "sha2-512256")]
     #[serde(rename = "sha2-512/256")]
     sha2: HashSum,
     #[cfg(feature = "blake2b")]
@@ -37,6 +39,7 @@ pub struct DatabaseChecksum {
 impl From<Metrics> for DatabaseChecksum {
     fn from(metrics: Metrics) -> Self {
         DatabaseChecksum {
+            #[cfg(feature = "sha2-512256")]
             sha2: metrics.sha2,
             #[cfg(feature = "blake2b")]
             blake2b: metrics.blake2b,
@@ -62,6 +65,7 @@ impl Default for Entry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Metrics {
+    #[cfg(feature = "sha2-512256")]
     #[serde(rename = "sha2-512/256")]
     sha2: HashSum,
     #[cfg(feature = "blake2b")]
@@ -109,6 +113,7 @@ impl EngineNonascii {
 
 #[derive(Default)]
 struct Engines {
+    #[cfg(feature = "sha2-512256")]
     sha2: sha2::Sha512Trunc256,
     #[cfg(feature = "blake2b")]
     blake2b: blake2::Blake2b,
@@ -119,6 +124,7 @@ struct Engines {
 
 impl Engines {
     fn input(&mut self, input: &[u8]) {
+        #[cfg(feature = "sha2-512256")]
         self.sha2.input(input);
         #[cfg(feature = "blake2b")]
         self.blake2b.input(input);
@@ -130,6 +136,7 @@ impl Engines {
         #[cfg(feature = "blake2b")]
         let mut buffer = [0; 32];
         Metrics {
+            #[cfg(feature = "sha2-512256")]
             sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
             #[cfg(feature = "blake2b")]
             blake2b: HashSum(
@@ -389,6 +396,7 @@ impl Entry {
             },
             (Entry::File(old), Entry::File(new)) => {
                 let changed = old.size != new.size;
+                #[cfg(feature = "sha2-512256")]
                 let changed = changed || old.sha2 != new.sha2;
                 #[cfg(feature = "blake2b")]
                 let changed = changed || old.blake2b != new.blake2b;
