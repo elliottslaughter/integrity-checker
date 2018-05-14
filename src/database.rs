@@ -27,9 +27,10 @@ use error;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DatabaseChecksum {
+    #[serde(rename = "sha2-512/256")]
     sha2: HashSum,
     #[cfg(feature = "blake2b")]
-    blake2: HashSum,
+    blake2b: HashSum,
     size: u64,
 }
 
@@ -38,7 +39,7 @@ impl From<Metrics> for DatabaseChecksum {
         DatabaseChecksum {
             sha2: metrics.sha2,
             #[cfg(feature = "blake2b")]
-            blake2: metrics.blake2,
+            blake2b: metrics.blake2b,
             size: metrics.size,
         }
     }
@@ -61,9 +62,10 @@ impl Default for Entry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Metrics {
+    #[serde(rename = "sha2-512/256")]
     sha2: HashSum,
     #[cfg(feature = "blake2b")]
-    blake2: HashSum,
+    blake2b: HashSum,
     size: u64,      // File size
     nul: bool,      // Does the file contain a NUL byte?
     nonascii: bool, // Does the file contain non-ASCII bytes?
@@ -109,7 +111,7 @@ impl EngineNonascii {
 struct Engines {
     sha2: sha2::Sha512Trunc256,
     #[cfg(feature = "blake2b")]
-    blake2: blake2::Blake2b,
+    blake2b: blake2::Blake2b,
     size: EngineSize,
     nul: EngineNul,
     nonascii: EngineNonascii,
@@ -119,7 +121,7 @@ impl Engines {
     fn input(&mut self, input: &[u8]) {
         self.sha2.input(input);
         #[cfg(feature = "blake2b")]
-        self.blake2.input(input);
+        self.blake2b.input(input);
         self.size.input(input);
         self.nul.input(input);
         self.nonascii.input(input);
@@ -130,8 +132,8 @@ impl Engines {
         Metrics {
             sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
             #[cfg(feature = "blake2b")]
-            blake2: HashSum(
-                Vec::from(self.blake2.variable_result(&mut buffer).unwrap())),
+            blake2b: HashSum(
+                Vec::from(self.blake2b.variable_result(&mut buffer).unwrap())),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
@@ -389,7 +391,7 @@ impl Entry {
                 let changed = old.size != new.size;
                 let changed = changed || old.sha2 != new.sha2;
                 #[cfg(feature = "blake2b")]
-                let changed = changed || old.blake2 != new.blake2;
+                let changed = changed || old.blake2b != new.blake2b;
                 EntryDiff::File(
                     MetricsDiff {
                         changed_content: changed,

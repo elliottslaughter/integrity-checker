@@ -2,13 +2,13 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
 
   "definitions": {
-    "sha2": {
+    "sha2-512/256": {
       "type": "string",
       "minLength": 44,
       "maxLength": 44,
       "pattern": "^[A-Za-z0-9/+=]+$"
     },
-    "blake2": {
+    "blake2b": {
       "type": "string",
       "minLength": 44,
       "maxLength": 44,
@@ -23,8 +23,8 @@
   "type": "object",
   "required": ["size"],
   "properties": {
-    "sha2": { "$ref": "#/definitions/sha2" },
-    "blake2": { "$ref": "#/definitions/blake2" },
+    "sha2-512/256": { "$ref": "#/definitions/sha2-512/256" },
+    "blake2b": { "$ref": "#/definitions/blake2b" },
     "size": { "$ref": "#/definitions/size" }
   },
   "additionalProperties": false
