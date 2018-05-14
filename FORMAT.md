@@ -32,7 +32,7 @@ The format is designed to be agnostic to the hash algorithm
 used. Multiple algorithms may be used simultaneously. By default, the
 following algorithm is used:
 
-  * SHA-512/256
+  * SHA2-512/256
 
 ## Other Formats Considered
 
