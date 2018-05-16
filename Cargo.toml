@@ -32,6 +32,11 @@ criterion = "0.2"
 tempfile = "3"
 valico = "2"
 
+[[bin]]
+name = "ick"
+path = "src/main.rs"
+bench = false
+
 [[bench]]
 name = "build"
 harness = false
