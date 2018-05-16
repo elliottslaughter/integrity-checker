@@ -41,6 +41,21 @@ The tool is designed around an especially stable database format so
 that if something were to happen, it would be relatively
 straightforward to recover the contained metadata.
 
+## Performance
+
+Corpus: [Linux 4.16.7
+source](https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.16.7.tar.xz)
+(4403 directories, 62872 files, 890 MiB)
+
+Machine: 2016 MacBook Pro 2.7 GHz Quad-Core i7
+
+|                        | Time (s) | BW (MiB/s) |
+| ---------------------- | -------- | ---------- |
+| No Hash                |   0.8832 |     1007.7 |
+| SHA2-512/256           |   1.3128 |      677.9 |
+| Blake2b                |   1.3034 |      682.8 |
+| SHA2-512/256 + Blake2b |   1.8119 |      491.2 |
+
 ## Format
 
 See the [format description](FORMAT.md).
