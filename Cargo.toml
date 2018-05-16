@@ -2,6 +2,18 @@
 name = "integrity-checker"
 version = "0.1.0"
 authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
+description = "integrity checker for backups and filesystems"
+documentation = "https://github.com/elliottslaughter/integrity-checker"
+homepage = "https://github.com/elliottslaughter/integrity-checker"
+repository = "https://github.com/elliottslaughter/integrity-checker"
+readme = "README.md"
+keywords = ["backup", "integrity"]
+categories = ["command-line-utilities", "filesystem"]
+license = "Apache-2.0"
+
+[badges]
+appveyor = { repository = "elliottslaughter/integrity-checker" }
+travis = { repository = "elliottslaughter/integrity-checker" }
 
 [features]
 default = ["sha2-512256"]
