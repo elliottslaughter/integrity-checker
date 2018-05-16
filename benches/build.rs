@@ -3,6 +3,8 @@ extern crate integrity_checker;
 #[macro_use]
 extern crate criterion;
 
+extern crate num_cpus;
+
 extern crate tempfile;
 
 use std::process::Command;
@@ -38,9 +40,11 @@ fn build(c: &mut Criterion) {
             .expect("failed to execute tar")
             .success());
 
+    let n = num_cpus::get();
+    println!("Running benchmark on {} cores", n);
     c.bench("build",
-            Benchmark::new("linux", move |b| b.iter(|| Database::build(&test_dir, false, 1)))
-            .sample_size(3));
+            Benchmark::new("linux", move |b| b.iter(|| Database::build(&test_dir, false, n)))
+            .sample_size(7));
 }
 
 criterion_group!(benches, build);
