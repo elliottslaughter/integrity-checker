@@ -50,7 +50,7 @@ source](https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.16.7.tar.xz)
 Machine: 2016 MacBook Pro 2.7 GHz Quad-Core i7
 
 | Configuration          | Time (s) | BW (MiB/s) |
-| ---------------------- | -------- | ---------- |
+|:---------------------- | --------:| ----------:|
 | No Hash                |   0.8832 |     1007.7 |
 | SHA2-512/256           |   1.3128 |      677.9 |
 | Blake2b                |   1.3034 |      682.8 |
