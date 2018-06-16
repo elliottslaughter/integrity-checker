@@ -30,10 +30,24 @@ use error;
 pub struct DatabaseChecksum {
     #[cfg(feature = "sha2-512256")]
     #[serde(rename = "sha2-512/256")]
-    sha2: HashSum,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sha2: Option<HashSum>,
     #[cfg(feature = "blake2b")]
-    blake2b: HashSum,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    blake2b: Option<HashSum>,
     size: u64,
+}
+
+impl DatabaseChecksum {
+    fn diff(&self, new: &Self) -> bool {
+        let changed = self.size != new.size;
+        #[cfg(feature = "sha2-512256")]
+        let changed = changed || (self.sha2.is_some() && self.sha2 != new.sha2);
+        #[cfg(feature = "blake2b")]
+        let changed = changed ||
+            (self.blake2b.is_some() && self.blake2b != new.blake2b);
+        changed
+    }
 }
 
 impl From<Metrics> for DatabaseChecksum {
@@ -67,9 +81,11 @@ impl Default for Entry {
 pub struct Metrics {
     #[cfg(feature = "sha2-512256")]
     #[serde(rename = "sha2-512/256")]
-    sha2: HashSum,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    sha2: Option<HashSum>,
     #[cfg(feature = "blake2b")]
-    blake2b: HashSum,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    blake2b: Option<HashSum>,
     size: u64,      // File size
     nul: bool,      // Does the file contain a NUL byte?
     nonascii: bool, // Does the file contain non-ASCII bytes?
@@ -137,10 +153,10 @@ impl Engines {
         let mut buffer = [0; 32];
         Metrics {
             #[cfg(feature = "sha2-512256")]
-            sha2: HashSum(Vec::from(self.sha2.result().as_slice())),
+            sha2: Some(HashSum(Vec::from(self.sha2.result().as_slice()))),
             #[cfg(feature = "blake2b")]
-            blake2b: HashSum(
-                Vec::from(self.blake2b.variable_result(&mut buffer).unwrap())),
+            blake2b: Some(HashSum(
+                Vec::from(self.blake2b.variable_result(&mut buffer).unwrap()))),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
@@ -397,9 +413,11 @@ impl Entry {
             (Entry::File(old), Entry::File(new)) => {
                 let changed = old.size != new.size;
                 #[cfg(feature = "sha2-512256")]
-                let changed = changed || old.sha2 != new.sha2;
+                let changed = changed ||
+                    (old.sha2.is_some() && old.sha2 != new.sha2);
                 #[cfg(feature = "blake2b")]
-                let changed = changed || old.blake2b != new.blake2b;
+                let changed = changed ||
+                    (old.blake2b.is_some() && old.blake2b != new.blake2b);
                 EntryDiff::File(
                     MetricsDiff {
                         changed_content: changed,
@@ -531,7 +549,7 @@ impl Database {
         engines.input(&bytes[index+1..]);
         let actual: DatabaseChecksum = engines.result().into();
 
-        if expected != actual {
+        if expected.diff(&actual) {
             return Err(error::Error::ChecksumMismatch);
         }
 
