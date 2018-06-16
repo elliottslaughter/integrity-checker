@@ -6,11 +6,11 @@ set -x
 rm -f db.json.gz db2.json.gz min_db.json.gz max_db.json.gz
 rm -f db2.json
 
-# # Basic tests
-# # cargo +nightly fmt -- --write-mode=diff
-# cargo build $FEATURES
-# cargo test $FEATURES
-# cargo bench $FEATURES
+# Basic tests
+# cargo +nightly fmt -- --write-mode=diff
+cargo build $FEATURES
+cargo test $FEATURES
+cargo bench $FEATURES
 
 # Test command-line interface
 cargo run $FEATURES -- build db README.md
