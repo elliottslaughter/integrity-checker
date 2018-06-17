@@ -86,15 +86,15 @@ See the [format description](FORMAT.md).
   * Review the output of check/diff and consider if it can be made
     more helpful
   * Decide what metadata, if any, to save. Ideas:
-      * Contains NUL bytes
-      * Contains non-ASCII bytes
-      * Is encodable as UTF-8 or other formats
-      * Line endings (certain VCS tools like to munge these)
-      * Is a symlink (Dropbox likes to forget this one)
-      * Has extended attributes or resource forks or other unusual features
-      * File name capitalization differs (might indicate trouble with a case-insensitive file system)
-      * Multiple files with names that differ only in capitalization (might indicate trouble with a case-sensitive file system)
-      * Differs in permissions (might indicate trouble with file system that doesn't track permissions)
+      * [X] Contains NUL bytes
+      * [X] Contains non-ASCII bytes
+      * [ ] Is encodable as UTF-8 or other formats
+      * [ ] Line endings (certain VCS tools like to munge these)
+      * [ ] Is a symlink (Dropbox likes to forget this one)
+      * [ ] Has extended attributes or resource forks or other unusual features
+      * [ ] File name capitalization differs (might indicate trouble with a case-insensitive file system)
+      * [ ] Multiple files with names that differ only in capitalization (might indicate trouble with a case-sensitive file system)
+      * [ ] Differs in permissions (might indicate trouble with file system that doesn't track permissions)
   * Unit/integration tests
       * Test top-level command workflows
       * Test that database checksums work (i.e. modification to database or checksum results in error)
