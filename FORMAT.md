@@ -34,6 +34,10 @@ following algorithm is used:
 
   * SHA2-512/256
 
+The following algorithms are also supported:
+
+  * BLAKE2b
+
 ## Other Formats Considered
 
 Here are some formats under consideration:
