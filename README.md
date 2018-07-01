@@ -1,12 +1,14 @@
 # Backup Integrity Checker [![Build Status](https://travis-ci.org/elliottslaughter/integrity-checker.svg?branch=master)](https://travis-ci.org/elliottslaughter/integrity-checker) [![Build Status](https://ci.appveyor.com/api/projects/status/w3mn421fl8l6r95a/branch/master?svg=true)](https://ci.appveyor.com/project/elliottslaughter/integrity-checker/branch/master)
 
-This tool is an integrity checker for backups and filesystems:
+This tool is an integrity checker for backups and filesystems.
+
+## What It Does
 
   * Given a directory, the tools constructs a database of metadata
     (hashes, sizes, timestamps, etc.) of the contents. The database
     itself is of course checksummed as well.
 
-  * Given two databases, or a database and a directory, the tool
+  * Given two databases (or a database and a directory) the tool
     iterates the entries and prints a *helpful* summary of the
     differences between them. For example, the tool highlights
     suspicious patterns, such as files which got truncated (had
@@ -14,6 +16,8 @@ This tool is an integrity checker for backups and filesystems:
     could indicate corruption (e.g. the presence of NUL bytes, if the
     file originally had none). Surfacing useful data while minimizing
     false positives is an ongoing effort.
+
+## What It's Good For
 
 Here are a couple sample use cases:
 
@@ -41,6 +45,10 @@ The tool is designed around an especially stable database format so
 that if something were to happen, it would be relatively
 straightforward to recover the contained metadata.
 
+## Format
+
+See the [format description](FORMAT.md).
+
 ## Performance
 
 Corpus: [Linux 4.16.7
@@ -55,10 +63,6 @@ Machine: 2016 MacBook Pro 2.7 GHz Quad-Core i7
 | SHA2-512/256           |   1.3128 |      677.9 |
 | Blake2b                |   1.3034 |      682.8 |
 | SHA2-512/256 + Blake2b |   1.8119 |      491.2 |
-
-## Format
-
-See the [format description](FORMAT.md).
 
 ## FAQ
 
