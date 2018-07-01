@@ -58,6 +58,25 @@ Other users run:
 The `asm` feature enables an optimization in the `sha2` crate which
 makes the SHA2 hash implementation faster.
 
+## Usage
+
+To build a database `db.json.gz` from the directory at `path`, run:
+
+    ick build db path
+
+There are several operations one can perform on a database. To check
+it directly against the contents of a directory, run:
+
+    ick check db path
+
+To diff two databases, run:
+
+    ick diff db db2
+
+To verify the validity of the checksums on a database, run:
+
+    ick selfcheck db
+
 ## Format
 
 See the [format description](FORMAT.md).
