@@ -11,6 +11,8 @@ keywords = ["backup", "integrity"]
 categories = ["command-line-utilities", "filesystem"]
 license = "Apache-2.0"
 
+include = ["Cargo.toml", "FORMAT.md", "LICENSE.txt", "README.md", "benches/**/*.rs", "examples/**/*.rs", "src/**/*.rs", "tests/**/*.rs", "schema/*.json"]
+
 [badges]
 appveyor = { repository = "elliottslaughter/integrity-checker" }
 travis = { repository = "elliottslaughter/integrity-checker" }
