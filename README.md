@@ -64,17 +64,10 @@ To build a database `db.json.gz` from the directory at `path`, run:
 
     ick build db path
 
-There are several operations one can perform on a database. To check
-it directly against the contents of a directory, run:
+There are several operations one can perform on a database. The following commands check a database against a directory, diff two databases, and validate a single database, respectively.
 
     ick check db path
-
-To diff two databases, run:
-
     ick diff db db2
-
-To verify the validity of the checksums on a database, run:
-
     ick selfcheck db
 
 ## Format
