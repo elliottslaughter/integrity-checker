@@ -9,7 +9,7 @@ extern crate tempfile;
 
 use std::process::Command;
 
-use integrity_checker::database::Database;
+use integrity_checker::database::{Database, Features};
 
 use criterion::{Benchmark, Criterion};
 
@@ -43,7 +43,7 @@ fn build(c: &mut Criterion) {
     let n = num_cpus::get();
     println!("Running benchmark on {} cores", n);
     c.bench("build",
-            Benchmark::new("linux", move |b| b.iter(|| Database::build(&test_dir, false, n)))
+            Benchmark::new("linux", move |b| b.iter(|| Database::build(&test_dir, Features::default(), n, false)))
             .sample_size(7));
 }
 
