@@ -15,7 +15,7 @@ cache:
 env:
   matrix:
     - FEATURES=
-    - FEATURES=--no-default-features
+    - FEATURES=--features=asm
 
 # before_script:
 #   - cargo +nightly install --force rustfmt-nightly

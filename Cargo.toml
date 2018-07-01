@@ -16,7 +16,7 @@ appveyor = { repository = "elliottslaughter/integrity-checker" }
 travis = { repository = "elliottslaughter/integrity-checker" }
 
 [features]
-default = ["asm"]
+default = []
 
 asm = ["sha2/asm"]
 
