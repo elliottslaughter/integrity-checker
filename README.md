@@ -100,5 +100,4 @@ See the [format description](FORMAT.md).
       * Test that database checksums work (i.e. modification to database or checksum results in error)
       * Test long-term stability of the format (i.e. older databases can be read and used)
   * Add a `-v` flag that shows verbose diffs
-  * Enable or disable features (i.e. hash algorithms) via a runtime flag
   * Add flags to configure the ignore crate (i.e. include or exclude paths)
