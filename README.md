@@ -45,6 +45,19 @@ The tool is designed around an especially stable database format so
 that if something were to happen, it would be relatively
 straightforward to recover the contained metadata.
 
+## Install
+
+For users running macOS or Linux on x86(-64), run:
+
+    cargo install integrity-checker --features=asm
+
+Other users run:
+
+    cargo install integrity-checker
+
+The `asm` feature enables an optimization in the `sha2` crate which
+makes the SHA2 hash implementation faster.
+
 ## Format
 
 See the [format description](FORMAT.md).
