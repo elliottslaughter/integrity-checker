@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate clap;
 
 extern crate serde_json;
@@ -105,6 +106,7 @@ fn parse_threads(matches: &clap::ArgMatches) -> usize {
 
 fn parse_args() -> Action {
     let matches = clap::App::new("Integrity Checker")
+        .version(crate_version!())
         .setting(clap::AppSettings::SubcommandRequiredElseHelp)
         .subcommand(clap::SubCommand::with_name("build")
                     .about("Creates an integrity database from a directory")
