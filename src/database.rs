@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use digest::Digest;
-#[cfg(feature = "blake2b")]
 use digest::VariableOutput;
 use ignore::{WalkBuilder, WalkState};
 use time;
@@ -18,21 +17,41 @@ use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 
-#[cfg(feature = "sha2-512256")]
 use sha2;
-#[cfg(feature = "blake2b")]
 use blake2;
 
 use base64;
 use error;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Features {
+    pub sha2: bool,
+    pub blake2b: bool,
+}
+
+impl Default for Features {
+    fn default() -> Features {
+        Features {
+            sha2: true,
+            blake2b: false,
+        }
+    }
+}
+
+impl Features {
+    fn infer_from_database_checksum(checksum: &DatabaseChecksum) -> Features {
+        Features {
+            sha2: checksum.sha2.is_some(),
+            blake2b: checksum.blake2b.is_some(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DatabaseChecksum {
-    #[cfg(feature = "sha2-512256")]
     #[serde(rename = "sha2-512/256")]
     #[serde(skip_serializing_if = "Option::is_none")]
     sha2: Option<HashSum>,
-    #[cfg(feature = "blake2b")]
     #[serde(skip_serializing_if = "Option::is_none")]
     blake2b: Option<HashSum>,
     size: u64,
@@ -41,11 +60,9 @@ pub struct DatabaseChecksum {
 impl DatabaseChecksum {
     fn diff(&self, new: &Self) -> bool {
         let changed = self.size != new.size;
-        #[cfg(feature = "sha2-512256")]
-        let changed = changed || (self.sha2.is_some() && self.sha2 != new.sha2);
-        #[cfg(feature = "blake2b")]
+        let changed = changed || (self.sha2.is_some() && new.sha2.is_some() && self.sha2 != new.sha2);
         let changed = changed ||
-            (self.blake2b.is_some() && self.blake2b != new.blake2b);
+            (self.blake2b.is_some() && new.blake2b.is_some() && self.blake2b != new.blake2b);
         changed
     }
 }
@@ -53,9 +70,7 @@ impl DatabaseChecksum {
 impl From<Metrics> for DatabaseChecksum {
     fn from(metrics: Metrics) -> Self {
         DatabaseChecksum {
-            #[cfg(feature = "sha2-512256")]
             sha2: metrics.sha2,
-            #[cfg(feature = "blake2b")]
             blake2b: metrics.blake2b,
             size: metrics.size,
         }
@@ -79,11 +94,9 @@ impl Default for Entry {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Metrics {
-    #[cfg(feature = "sha2-512256")]
     #[serde(rename = "sha2-512/256")]
     #[serde(skip_serializing_if = "Option::is_none")]
     sha2: Option<HashSum>,
-    #[cfg(feature = "blake2b")]
     #[serde(skip_serializing_if = "Option::is_none")]
     blake2b: Option<HashSum>,
     size: u64,      // File size
@@ -127,36 +140,48 @@ impl EngineNonascii {
     }
 }
 
-#[derive(Default)]
 struct Engines {
-    #[cfg(feature = "sha2-512256")]
-    sha2: sha2::Sha512Trunc256,
-    #[cfg(feature = "blake2b")]
-    blake2b: blake2::Blake2b,
+    sha2: Option<sha2::Sha512Trunc256>,
+    blake2b: Option<blake2::Blake2b>,
     size: EngineSize,
     nul: EngineNul,
     nonascii: EngineNonascii,
 }
 
 impl Engines {
+    fn new(features: Features) -> Engines {
+        Engines {
+            sha2: if features.sha2 {
+                Some(sha2::Sha512Trunc256::default())
+            } else {
+                None
+            },
+            blake2b: if features.blake2b {
+                Some(blake2::Blake2b::default())
+            } else {
+                None
+            },
+            size: EngineSize::default(),
+            nul: EngineNul::default(),
+            nonascii: EngineNonascii::default(),
+         }
+    }
+}
+
+impl Engines {
     fn input(&mut self, input: &[u8]) {
-        #[cfg(feature = "sha2-512256")]
-        self.sha2.input(input);
-        #[cfg(feature = "blake2b")]
-        self.blake2b.input(input);
+        self.sha2.iter_mut().for_each(|e| e.input(input));
+        self.blake2b.iter_mut().for_each(|e| e.input(input));
         self.size.input(input);
         self.nul.input(input);
         self.nonascii.input(input);
     }
     fn result(self) -> Metrics {
-        #[cfg(feature = "blake2b")]
         let mut buffer = [0; 32];
         Metrics {
-            #[cfg(feature = "sha2-512256")]
-            sha2: Some(HashSum(Vec::from(self.sha2.result().as_slice()))),
-            #[cfg(feature = "blake2b")]
-            blake2b: Some(HashSum(
-                Vec::from(self.blake2b.variable_result(&mut buffer).unwrap()))),
+            sha2: self.sha2.map(|e| HashSum(Vec::from(e.result().as_slice()))),
+            blake2b: self.blake2b.map(|e| HashSum(
+                Vec::from(e.variable_result(&mut buffer).unwrap()))),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
@@ -164,10 +189,10 @@ impl Engines {
     }
 }
 
-fn compute_metrics(path: impl AsRef<Path>) -> Result<Metrics, error::Error> {
+fn compute_metrics(path: impl AsRef<Path>, features: Features) -> Result<Metrics, error::Error> {
     let mut f = File::open(path)?;
 
-    let mut engines = Engines::default();
+    let mut engines = Engines::new(features);
 
     let mut buffer = [0; 4096];
     loop {
@@ -412,12 +437,10 @@ impl Entry {
             },
             (Entry::File(old), Entry::File(new)) => {
                 let changed = old.size != new.size;
-                #[cfg(feature = "sha2-512256")]
                 let changed = changed ||
-                    (old.sha2.is_some() && old.sha2 != new.sha2);
-                #[cfg(feature = "blake2b")]
+                    (old.sha2.is_some() && new.sha2.is_some() && old.sha2 != new.sha2);
                 let changed = changed ||
-                    (old.blake2b.is_some() && old.blake2b != new.blake2b);
+                    (old.blake2b.is_some() && new.blake2b.is_some() && old.blake2b != new.blake2b);
                 EntryDiff::File(
                     MetricsDiff {
                         changed_content: changed,
@@ -449,8 +472,9 @@ impl Database {
 
     pub fn build(
         root: impl AsRef<Path>,
-        verbose: bool,
+        features: Features,
         threads: usize,
+        verbose: bool,
     ) -> Result<Database, error::Error> {
         let total_bytes = Arc::new(Mutex::new(0));
         let database = Arc::new(Mutex::new(Database::default()));
@@ -465,7 +489,7 @@ impl Database {
                 Box::new(move |entry| {
                     let entry = entry.unwrap(); // ?
                     if entry.file_type().map_or(false, |t| t.is_file()) {
-                        let metrics = compute_metrics(entry.path()).unwrap(); // ?
+                        let metrics = compute_metrics(entry.path(), features).unwrap(); // ?
                         *total_bytes.lock().unwrap() += metrics.size;
                         let result = Entry::File(metrics);
                         let short_path = if entry.path() == root {
@@ -484,7 +508,7 @@ impl Database {
             for entry in WalkBuilder::new(&root).build() {
                 let entry = entry?;
                 if entry.file_type().map_or(false, |t| t.is_file()) {
-                    let metrics = compute_metrics(entry.path())?;
+                    let metrics = compute_metrics(entry.path(), features)?;
                     *total_bytes += metrics.size;
                     let result = Entry::File(metrics);
                     let short_path = if entry.path() == root.as_ref() {
@@ -518,11 +542,12 @@ impl Database {
     pub fn check(
         &self,
         root: impl AsRef<Path>,
+        features: Features,
         threads: usize
     ) -> Result<DiffSummary, error::Error> {
         // FIXME: This is non-interactive, but vastly more simple than
         // trying to implement the same functionality interactively.
-        let other = Database::build(root, false, threads)?;
+        let other = Database::build(root, features, threads, false)?;
         Ok(self.show_diff(&other))
     }
 
@@ -543,9 +568,10 @@ impl Database {
         // Decode expected checksums
         let expected : DatabaseChecksum =
             serde_json::from_slice(&bytes[..index])?;
+        let features = Features::infer_from_database_checksum(&expected);
 
         // Compute actual checksums of database
-        let mut engines = Engines::default();
+        let mut engines = Engines::new(features);
         engines.input(&bytes[index+1..]);
         let actual: DatabaseChecksum = engines.result().into();
 
@@ -557,7 +583,7 @@ impl Database {
         Ok(serde_json::from_slice(&bytes[index+1..])?)
     }
 
-    pub fn dump_json<W>(&self, w: W) -> Result<W, error::Error>
+    pub fn dump_json<W>(&self, w: W, features: Features) -> Result<W, error::Error>
     where
         W: Write
     {
@@ -568,7 +594,7 @@ impl Database {
         let db_json = serde_json::to_vec(self)?;
 
         // Compute checksums of encoded JSON
-        let mut engines = Engines::default();
+        let mut engines = Engines::new(features);
         engines.input(&db_json[..]);
         let checksum: DatabaseChecksum = engines.result().into();
         let checksum_json = serde_json::to_vec(&checksum)?;

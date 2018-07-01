@@ -12,7 +12,7 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
-use integrity_checker::database::Database;
+use integrity_checker::database::{Database, Features};
 use integrity_checker::error::Error;
 
 use flate2::read::GzDecoder;
@@ -34,15 +34,15 @@ fn validate_schema(data: &[u8], schema_path: impl AsRef<Path>) -> Result<bool, E
     Ok(schema.validate(&instance).is_valid())
 }
 
-fn validate(path: impl AsRef<Path>) -> Result<bool, Error> {
+fn validate(path: impl AsRef<Path>, features: Features) -> Result<bool, Error> {
     let threads = 1;
-    let db = Database::build(&path, false, threads)?;
+    let db = Database::build(&path, features, threads, false)?;
 
     // Dump the databse to a temporary file and read it back so that
     // we can be 100% sure we're doing everything the same way as the
     // main client.
     let f = tempfile()?;
-    let mut f = db.dump_json(f)?;
+    let mut f = db.dump_json(f, features)?;
     f.seek(SeekFrom::Start(0))?;
     let mut d = GzDecoder::new(f);
     let mut bytes = Vec::new();
@@ -60,62 +60,97 @@ fn validate(path: impl AsRef<Path>) -> Result<bool, Error> {
        validate_schema(&bytes[index+1..], "schema/database.json")?)
 }
 
+const NONE:    Features = Features { sha2: false, blake2b: false };
+const SHA2:    Features = Features { sha2:  true, blake2b: false };
+const BLAKE2B: Features = Features { sha2: false, blake2b: true };
+const ALL:     Features = Features { sha2:  true, blake2b: true };
+
+const ALL_FEATURES: &[Features] = &[NONE, SHA2, BLAKE2B, ALL];
+
 #[test]
 fn no_changes() {
-    assert!(validate("tests/nochanges/before").unwrap());
-    assert!(validate("tests/nochanges/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/nochanges/before", *features).unwrap());
+        assert!(validate("tests/nochanges/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn changes_edit() {
-    assert!(validate("tests/changes_edit/before").unwrap());
-    assert!(validate("tests/changes_edit/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_edit/before", *features).unwrap());
+        assert!(validate("tests/changes_edit/after", *features).unwrap());
+    }
+}
+
+#[test]
+fn changes_edit_no_size_change() {
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_edit_no_size_change/before", *features).unwrap());
+        assert!(validate("tests/changes_edit_no_size_change/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn changes_new() {
-    assert!(validate("tests/changes_new/before").unwrap());
-    assert!(validate("tests/changes_new/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_new/before", *features).unwrap());
+        assert!(validate("tests/changes_new/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn changes_edit_bin() {
-    assert!(validate("tests/changes_edit_bin/before").unwrap());
-    assert!(validate("tests/changes_edit_bin/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_edit_bin/before", *features).unwrap());
+        assert!(validate("tests/changes_edit_bin/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn changes_new_bin() {
-    assert!(validate("tests/changes_new_bin/before").unwrap());
-    assert!(validate("tests/changes_new_bin/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_new_bin/before", *features).unwrap());
+        assert!(validate("tests/changes_new_bin/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn changes_delete() {
-    assert!(validate("tests/changes_delete/before").unwrap());
-    assert!(validate("tests/changes_delete/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_delete/before", *features).unwrap());
+        assert!(validate("tests/changes_delete/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn changes_delete_dir() {
-    assert!(validate("tests/changes_delete_dir/before").unwrap());
-    assert!(validate("tests/changes_delete_dir/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/changes_delete_dir/before", *features).unwrap());
+        assert!(validate("tests/changes_delete_dir/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn suspicious_truncate() {
-    assert!(validate("tests/suspicious_truncate/before").unwrap());
-    assert!(validate("tests/suspicious_truncate/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/suspicious_truncate/before", *features).unwrap());
+        assert!(validate("tests/suspicious_truncate/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn suspicious_nul() {
-    assert!(validate("tests/suspicious_nul/before").unwrap());
-    assert!(validate("tests/suspicious_nul/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/suspicious_nul/before", *features).unwrap());
+        assert!(validate("tests/suspicious_nul/after", *features).unwrap());
+    }
 }
 
 #[test]
 fn suspicious_nonascii() {
-    assert!(validate("tests/suspicious_nonascii/before").unwrap());
-    assert!(validate("tests/suspicious_nonascii/after").unwrap());
+    for features in ALL_FEATURES {
+        assert!(validate("tests/suspicious_nonascii/before", *features).unwrap());
+        assert!(validate("tests/suspicious_nonascii/after", *features).unwrap());
+    }
 }
