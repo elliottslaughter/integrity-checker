@@ -2,7 +2,7 @@
 
 This tool is an integrity checker for backups and filesystems.
 
-## What It Does
+## What it Does
 
   * Given a directory, the tools constructs a database of metadata
     (hashes, sizes, timestamps, etc.) of the contents. The database
@@ -17,7 +17,7 @@ This tool is an integrity checker for backups and filesystems.
     file originally had none). Surfacing useful data while minimizing
     false positives is an ongoing effort.
 
-## What It's Good For
+## What's it Good For?
 
 Here are a couple sample use cases:
 
@@ -38,8 +38,8 @@ Here are a couple sample use cases:
     This also applies to any live filesystem. Consider that a typical
     user will maintain continuity of data across possibly decades of
     hardware and filesystem upgrades. Every transition is an
-    opportunity for silent data corruption. Better to be safe than
-    sorry.
+    opportunity for silent data corruption. This tool can provide
+    peace of mind that integrity is preserved for long-lived data.
 
 The tool is designed around an especially stable database format so
 that if something were to happen, it would be relatively
