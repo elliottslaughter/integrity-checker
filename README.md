@@ -126,6 +126,7 @@ Machine: 2016 MacBook Pro 2.7 GHz Quad-Core i7
       * [ ] File name capitalization differs (might indicate trouble with a case-insensitive file system)
       * [ ] Multiple files with names that differ only in capitalization (might indicate trouble with a case-sensitive file system)
       * [ ] Differs in permissions (might indicate trouble with file system that doesn't track permissions)
+      * [ ] Track statistics (such as byte frequency) that might be indicators of what the general content type of the document might be (e.g. text vs binary), and report if those statistics shift too far
   * Unit/integration tests
       * Test top-level command workflows
       * Test that database checksums work (i.e. modification to database or checksum results in error)
