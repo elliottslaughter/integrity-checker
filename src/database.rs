@@ -6,8 +6,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use digest::Digest;
-use digest::VariableOutput;
+use digest::{Input, FixedOutput, VariableOutput};
 use ignore::{WalkBuilder, WalkState};
 use time;
 
@@ -142,7 +141,7 @@ impl EngineNonascii {
 
 struct Engines {
     sha2: Option<sha2::Sha512Trunc256>,
-    blake2b: Option<blake2::Blake2b>,
+    blake2b: Option<blake2::VarBlake2b>,
     size: EngineSize,
     nul: EngineNul,
     nonascii: EngineNonascii,
@@ -157,7 +156,7 @@ impl Engines {
                 None
             },
             blake2b: if features.blake2b {
-                Some(blake2::Blake2b::default())
+                Some(blake2::VarBlake2b::new(32).unwrap())
             } else {
                 None
             },
@@ -177,11 +176,10 @@ impl Engines {
         self.nonascii.input(input);
     }
     fn result(self) -> Metrics {
-        let mut buffer = [0; 32];
         Metrics {
-            sha2: self.sha2.map(|e| HashSum(Vec::from(e.result().as_slice()))),
+            sha2: self.sha2.map(|e| HashSum(Vec::from(e.fixed_result().as_slice()))),
             blake2b: self.blake2b.map(|e| HashSum(
-                Vec::from(e.variable_result(&mut buffer).unwrap()))),
+                e.vec_result())),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
