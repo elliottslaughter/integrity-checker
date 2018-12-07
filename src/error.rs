@@ -1,5 +1,5 @@
 use std;
-use ignore;
+use ::ignore;
 use serde_json;
 
 #[derive(Debug)]

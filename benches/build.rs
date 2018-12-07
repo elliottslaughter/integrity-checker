@@ -1,11 +1,5 @@
-extern crate integrity_checker;
-
 #[macro_use]
 extern crate criterion;
-
-extern crate num_cpus;
-
-extern crate tempfile;
 
 use std::process::Command;
 

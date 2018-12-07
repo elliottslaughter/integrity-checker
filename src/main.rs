@@ -1,10 +1,6 @@
 #[macro_use]
 extern crate clap;
 
-extern crate serde_json;
-
-extern crate integrity_checker;
-
 use std::ffi::OsString;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Write};

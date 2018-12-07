@@ -1,5 +1,3 @@
-extern crate integrity_checker;
-
 use std::path::{Path, PathBuf};
 
 use integrity_checker::database::{Database, DiffSummary, Features};

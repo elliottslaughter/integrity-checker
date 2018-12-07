@@ -1,13 +1,3 @@
-extern crate integrity_checker;
-
-extern crate flate2;
-
-extern crate serde_json;
-
-extern crate tempfile;
-
-extern crate valico;
-
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
