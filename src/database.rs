@@ -19,8 +19,8 @@ use flate2::write::GzEncoder;
 use sha2;
 use blake2;
 
-use base64;
-use error;
+use crate::base64;
+use crate::error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Features {
