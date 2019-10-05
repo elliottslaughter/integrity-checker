@@ -44,7 +44,7 @@ blake2 = "0.8"
 criterion = "0.2"
 num_cpus = "1"
 tempfile = "3"
-valico = "2"
+valico = "3"
 
 [[bin]]
 name = "ick"
