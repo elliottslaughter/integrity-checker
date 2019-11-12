@@ -38,7 +38,7 @@ fn build(c: &mut Criterion) {
     println!("Running benchmark on {} cores", n);
     c.bench("build",
             Benchmark::new("linux", move |b| b.iter(|| Database::build(&test_dir, Features::default(), n, false)))
-            .sample_size(7));
+            .sample_size(10));
 }
 
 criterion_group!(benches, build);
