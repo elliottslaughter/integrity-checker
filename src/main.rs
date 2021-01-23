@@ -4,7 +4,6 @@ extern crate clap;
 use std::ffi::OsString;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Write};
-use std::path::PathBuf;
 
 use integrity_checker::database::{Features, Database, DiffSummary};
 use integrity_checker::error;
@@ -180,15 +179,13 @@ fn driver() -> Result<ActionSummary, error::Error> {
     let action = parse_args();
     match action {
         Action::Build { db_path, dir_path, features, threads, force } => {
-            let mut json_path = PathBuf::from(&db_path);
-            json_path.set_extension("json.gz");
             // Truncate only when force is set
             let f = OpenOptions::new()
                 .write(true)
                 .create(true)
                 .truncate(true)
                 .create_new(!force)
-                .open(json_path)?;
+                .open(&db_path)?;
 
             let database = Database::build(&dir_path, features, threads, true)?;
             database.dump_json(f, features)?;
@@ -196,27 +193,19 @@ fn driver() -> Result<ActionSummary, error::Error> {
             Ok(ActionSummary::Built)
         }
         Action::Check { db_path, dir_path, features, threads } => {
-            let mut json_path = PathBuf::from(&db_path);
-            json_path.set_extension("json.gz");
-            let f = File::open(json_path)?;
+            let f = File::open(&db_path)?;
             let database = Database::load_json(f)?;
             Ok(ActionSummary::Diff(database.check(&dir_path, features, threads)?))
         }
         Action::Diff { old_path, new_path } => {
-            let mut json_old_path = PathBuf::from(&old_path);
-            json_old_path.set_extension("json.gz");
-            let mut json_new_path = PathBuf::from(&new_path);
-            json_new_path.set_extension("json.gz");
-            let f_old = File::open(json_old_path)?;
-            let f_new = File::open(json_new_path)?;
+            let f_old = File::open(&old_path)?;
+            let f_new = File::open(&new_path)?;
             let old = Database::load_json(f_old)?;
             let new = Database::load_json(f_new)?;
             Ok(ActionSummary::Diff(old.show_diff(&new)))
         }
         Action::SelfCheck { db_path } => {
-            let mut json_path = PathBuf::from(&db_path);
-            json_path.set_extension("json.gz");
-            let f = File::open(json_path)?;
+            let f = File::open(&db_path)?;
             Database::load_json(f)?;
             Ok(ActionSummary::Diff(DiffSummary::NoChanges))
         }
