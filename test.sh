@@ -3,6 +3,8 @@
 set -e
 set -x
 
+echo $CHANNEL
+
 if [[ -n $CHANNEL ]]; then
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain $CHANNEL -y
 fi
