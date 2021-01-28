@@ -1,4 +1,4 @@
-# Backup Integrity Checker [![Build Status](https://travis-ci.org/elliottslaughter/integrity-checker.svg?branch=master)](https://travis-ci.org/elliottslaughter/integrity-checker) [![Build Status](https://ci.appveyor.com/api/projects/status/w3mn421fl8l6r95a/branch/master?svg=true)](https://ci.appveyor.com/project/elliottslaughter/integrity-checker/branch/master)
+# Backup Integrity Checker [![Build Status](https://github.com/elliottslaughter/integrity-checker/workflows/CI/badge.svg)](https://github.com/elliottslaughter/integrity-checker/actions) [![Build Status](https://ci.appveyor.com/api/projects/status/w3mn421fl8l6r95a/branch/master?svg=true)](https://ci.appveyor.com/project/elliottslaughter/integrity-checker/branch/master)
 
 This tool is an integrity checker for backups and filesystems.
 
