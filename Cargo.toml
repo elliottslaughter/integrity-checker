@@ -15,10 +15,6 @@ include = ["Cargo.lock", "Cargo.toml", "FORMAT.md", "LICENSE.txt", "README.md", 
 
 edition = "2018"
 
-[badges]
-appveyor = { repository = "elliottslaughter/integrity-checker" }
-travis-ci = { repository = "elliottslaughter/integrity-checker" }
-
 [features]
 default = []
 
