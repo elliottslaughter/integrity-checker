@@ -9,7 +9,7 @@ jobs:
       matrix:
         os: ['ubuntu-16.04', 'macos-10.15']
         channel: ['stable', 'beta']
-        features: ['', '--features=asm']
+        # features: ['', '--features=asm']
     steps:
       - uses: actions/checkout@v1
       - run: ./test.sh
