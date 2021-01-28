@@ -3,16 +3,20 @@ on: [push, pull_request]
 
 jobs:
   build:
-    name: Build (channel=${{ matrix.channel }})
+    name: Build (os=${{ matrix.os }}, lisp=${{ matrix.lisp }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ['ubuntu-16.04', 'macos-10.15']
-        channel: ['stable', 'beta']
-        # features: ['', '--features=asm']
+        os: ['ubuntu-18.04', 'macos-10.15']
+        lisp: ['allegro', 'ccl-bin', 'cmu-bin', 'ecl', 'sbcl-bin']
+        exclude:
+          # 32-bit only, no longer compatible with newest macOS
+          - os: 'macos-10.15'
+            lisp: 'allegro'
+          - os: 'macos-10.15'
+            lisp: 'cmu-bin'
     steps:
       - uses: actions/checkout@v1
-      - run: ./test.sh
+      - run: ./ci.sh
         env:
-          CHANNEL: ${{ matrix.channel }}
-          FEATURES: ${{ matrix.features }}
+          LISP: ${{ matrix.lisp }}
