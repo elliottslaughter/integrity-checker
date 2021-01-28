@@ -3,6 +3,10 @@
 set -e
 set -x
 
+if [[ -n $CHANNEL ]]; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain $CHANNEL -y
+fi
+
 rm -f db.json.gz db2.json.gz
 rm -f db2.json
 
