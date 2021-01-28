@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    name: Build (channel=${{ matrix.channel }})
+    name: Build (os=${{ matrix.os }}, channel=${{ matrix.channel }}, features=${{ matrix.features }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
