@@ -62,15 +62,15 @@ makes the SHA2 hash implementation faster.
 
 To build a database `db.json.gz` from the directory at `path`, run:
 
-    ick build db path
+    ick build db.json.gz path
 
 There are several operations one can perform on a database. The
 following commands check a database against a directory, diff two
 databases, and validate a single database, respectively.
 
-    ick check db path
-    ick diff db db2
-    ick selfcheck db
+    ick check db.json.gz path
+    ick diff db.json.gz db2.json.gz
+    ick selfcheck db.json.gz
 
 ## Format
 
