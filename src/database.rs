@@ -476,7 +476,7 @@ impl Database {
     ) -> Result<Database, error::Error> {
         let total_bytes = Arc::new(Mutex::new(0));
         let database = Arc::new(Mutex::new(Database::default()));
-        let start_time_ns = time::precise_time_ns();
+        let start_time = time::Instant::now();
 
         let parallel = threads > 1;
         if parallel {
@@ -518,14 +518,14 @@ impl Database {
                 }
             }
         }
-        let stop_time_ns = time::precise_time_ns();
+        let elapsed = start_time.elapsed().as_seconds_f64();
         if verbose {
             let total_bytes = *total_bytes.lock().unwrap();
             println!("Database::build took {:.3} seconds on {} threads, read {} bytes, {:.1} MB/s",
-                     (stop_time_ns - start_time_ns) as f64/1e9,
+                     elapsed,
                      threads,
                      total_bytes,
-                     total_bytes as f64/((stop_time_ns - start_time_ns) as f64/1e3));
+                     total_bytes as f64/elapsed/1e6);
         }
         let ref database = *database.lock().unwrap();
         Ok(database.clone())
