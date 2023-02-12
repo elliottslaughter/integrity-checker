@@ -1,16 +1,18 @@
 // Base64 encoding adapter for Serde
 // From https://github.com/serde-rs/json/issues/360#issuecomment-330095360
 
-use serde::{Serializer, de, Deserialize, Deserializer};
+use serde::{de, Deserialize, Deserializer, Serializer};
 
 pub fn serialize<S>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer
+where
+    S: Serializer,
 {
     serializer.serialize_str(&base64::encode(bytes))
 }
 
 pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
-    where D: Deserializer<'de>
+where
+    D: Deserializer<'de>,
 {
     let s = <&str>::deserialize(deserializer)?;
     base64::decode(s).map_err(de::Error::custom)

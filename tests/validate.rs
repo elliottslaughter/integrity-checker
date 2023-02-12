@@ -46,14 +46,26 @@ fn validate(path: impl AsRef<Path>, features: Features) -> Result<bool, Error> {
         None => return Err(Error::ParseError),
     };
 
-    Ok(validate_schema(&bytes[..index], "schema/checksum.json")? &&
-       validate_schema(&bytes[index+1..], "schema/database.json")?)
+    Ok(validate_schema(&bytes[..index], "schema/checksum.json")?
+        && validate_schema(&bytes[index + 1..], "schema/database.json")?)
 }
 
-const NONE:    Features = Features { sha2: false, blake2b: false };
-const SHA2:    Features = Features { sha2:  true, blake2b: false };
-const BLAKE2B: Features = Features { sha2: false, blake2b: true };
-const ALL:     Features = Features { sha2:  true, blake2b: true };
+const NONE: Features = Features {
+    sha2: false,
+    blake2b: false,
+};
+const SHA2: Features = Features {
+    sha2: true,
+    blake2b: false,
+};
+const BLAKE2B: Features = Features {
+    sha2: false,
+    blake2b: true,
+};
+const ALL: Features = Features {
+    sha2: true,
+    blake2b: true,
+};
 
 const ALL_FEATURES: &[Features] = &[NONE, SHA2, BLAKE2B, ALL];
 

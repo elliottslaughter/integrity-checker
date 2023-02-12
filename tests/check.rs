@@ -2,7 +2,11 @@ use std::path::{Path, PathBuf};
 
 use integrity_checker::database::{Database, DiffSummary, Features};
 
-fn check(root_dir: impl AsRef<Path>, before_features: Features, after_features: Features) -> DiffSummary {
+fn check(
+    root_dir: impl AsRef<Path>,
+    before_features: Features,
+    after_features: Features,
+) -> DiffSummary {
     let mut before_path = PathBuf::from(root_dir.as_ref());
     before_path.push("before");
 
@@ -11,36 +15,50 @@ fn check(root_dir: impl AsRef<Path>, before_features: Features, after_features: 
 
     let threads = 1;
     let before_db = Database::build(&before_path, before_features, threads, false).unwrap();
-    before_db.check(&after_path, after_features, threads).unwrap()
+    before_db
+        .check(&after_path, after_features, threads)
+        .unwrap()
 }
 
-const NONE:    Features = Features { sha2: false, blake2b: false };
-const SHA2:    Features = Features { sha2:  true, blake2b: false };
-const BLAKE2B: Features = Features { sha2: false, blake2b: true };
-const ALL:     Features = Features { sha2:  true, blake2b: true };
+const NONE: Features = Features {
+    sha2: false,
+    blake2b: false,
+};
+const SHA2: Features = Features {
+    sha2: true,
+    blake2b: false,
+};
+const BLAKE2B: Features = Features {
+    sha2: false,
+    blake2b: true,
+};
+const ALL: Features = Features {
+    sha2: true,
+    blake2b: true,
+};
 
 const ALL_FEATURES: &[Features] = &[NONE, SHA2, BLAKE2B, ALL];
 
 // These pairs of features share at least one hash in common (and
 // therefore can detect changes even when other metrics don't change).
 const VIABLE_FEATURES: &[(Features, Features)] = &[
-    (   SHA2,     ALL),
-    (    ALL,    SHA2),
-    (BLAKE2B,     ALL),
-    (    ALL, BLAKE2B),
-    (    ALL,     ALL),
+    (SHA2, ALL),
+    (ALL, SHA2),
+    (BLAKE2B, ALL),
+    (ALL, BLAKE2B),
+    (ALL, ALL),
 ];
 
 // These pairs of features don't share any common hash (and therefore
 // can't detect changes except when another metric changes).
 const NONVIABLE_FEATURES: &[(Features, Features)] = &[
-    (   NONE,    NONE),
-    (   NONE,    SHA2),
-    (   SHA2,    NONE),
-    (   NONE, BLAKE2B),
-    (BLAKE2B,    NONE),
-    (   SHA2, BLAKE2B),
-    (BLAKE2B,    SHA2),
+    (NONE, NONE),
+    (NONE, SHA2),
+    (SHA2, NONE),
+    (NONE, BLAKE2B),
+    (BLAKE2B, NONE),
+    (SHA2, BLAKE2B),
+    (BLAKE2B, SHA2),
 ];
 
 #[test]
@@ -66,11 +84,19 @@ fn changes_edit() {
 #[test]
 fn changes_edit_no_size_change() {
     for (before_features, after_features) in VIABLE_FEATURES {
-        let result = check("tests/changes_edit_no_size_change", *before_features, *after_features);
+        let result = check(
+            "tests/changes_edit_no_size_change",
+            *before_features,
+            *after_features,
+        );
         assert_eq!(result, DiffSummary::Changes);
     }
     for (before_features, after_features) in NONVIABLE_FEATURES {
-        let result = check("tests/changes_edit_no_size_change", *before_features, *after_features);
+        let result = check(
+            "tests/changes_edit_no_size_change",
+            *before_features,
+            *after_features,
+        );
         assert_eq!(result, DiffSummary::NoChanges);
     }
 }
@@ -121,7 +147,11 @@ fn changes_delete() {
 fn changes_delete_dir() {
     for before_features in ALL_FEATURES {
         for after_features in ALL_FEATURES {
-            let result = check("tests/changes_delete_dir", *before_features, *after_features);
+            let result = check(
+                "tests/changes_delete_dir",
+                *before_features,
+                *after_features,
+            );
             assert_eq!(result, DiffSummary::Changes);
         }
     }
@@ -131,7 +161,11 @@ fn changes_delete_dir() {
 fn suspicious_truncate() {
     for before_features in ALL_FEATURES {
         for after_features in ALL_FEATURES {
-            let result = check("tests/suspicious_truncate", *before_features, *after_features);
+            let result = check(
+                "tests/suspicious_truncate",
+                *before_features,
+                *after_features,
+            );
             assert_eq!(result, DiffSummary::Suspicious);
         }
     }
@@ -151,7 +185,11 @@ fn suspicious_nul() {
 fn suspicious_nonascii() {
     for before_features in ALL_FEATURES {
         for after_features in ALL_FEATURES {
-            let result = check("tests/suspicious_nonascii", *before_features, *after_features);
+            let result = check(
+                "tests/suspicious_nonascii",
+                *before_features,
+                *after_features,
+            );
             assert_eq!(result, DiffSummary::Suspicious);
         }
     }

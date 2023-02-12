@@ -15,30 +15,32 @@ fn build(c: &mut Criterion) {
     let url = "https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.16.7.tar.xz";
     let test_dir = dir.path().join("linux-4.16.7");
 
-    assert!(
-        Command::new("curl")
-            .arg(url)
-            .arg("-o")
-            .arg(tarball.clone())
-            .current_dir(dir.path())
-            .status()
-            .expect("failed to execute curl")
-            .success());
+    assert!(Command::new("curl")
+        .arg(url)
+        .arg("-o")
+        .arg(tarball.clone())
+        .current_dir(dir.path())
+        .status()
+        .expect("failed to execute curl")
+        .success());
 
-    assert!(
-        Command::new("tar")
-            .arg("xfJ")
-            .arg(tarball)
-            .current_dir(dir.path())
-            .status()
-            .expect("failed to execute tar")
-            .success());
+    assert!(Command::new("tar")
+        .arg("xfJ")
+        .arg(tarball)
+        .current_dir(dir.path())
+        .status()
+        .expect("failed to execute tar")
+        .success());
 
     let n = num_cpus::get();
     println!("Running benchmark on {} cores", n);
-    c.bench("build",
-            Benchmark::new("linux", move |b| b.iter(|| Database::build(&test_dir, Features::default(), n, false)))
-            .sample_size(10));
+    c.bench(
+        "build",
+        Benchmark::new("linux", move |b| {
+            b.iter(|| Database::build(&test_dir, Features::default(), n, false))
+        })
+        .sample_size(10),
+    );
 }
 
 criterion_group!(benches, build);

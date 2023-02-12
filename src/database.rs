@@ -1,23 +1,23 @@
-use std::collections::BTreeMap;
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::default::Default;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use digest::{FixedOutput, consts::U32, Digest};
+use digest::{consts::U32, Digest, FixedOutput};
 use ignore::{WalkBuilder, WalkState};
 use time;
 
 use serde_json;
 
-use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
+use flate2::Compression;
 
-use sha2::Sha512_256;
 use blake2;
+use sha2::Sha512_256;
 
 use crate::base64;
 use crate::error;
@@ -61,9 +61,10 @@ pub struct DatabaseChecksum {
 impl DatabaseChecksum {
     fn diff(&self, new: &Self) -> bool {
         let changed = self.size != new.size;
-        let changed = changed || (self.sha2.is_some() && new.sha2.is_some() && self.sha2 != new.sha2);
-        let changed = changed ||
-            (self.blake2b.is_some() && new.blake2b.is_some() && self.blake2b != new.blake2b);
+        let changed =
+            changed || (self.sha2.is_some() && new.sha2.is_some() && self.sha2 != new.sha2);
+        let changed = changed
+            || (self.blake2b.is_some() && new.blake2b.is_some() && self.blake2b != new.blake2b);
         changed
     }
 }
@@ -165,7 +166,7 @@ impl Engines {
             size: EngineSize::default(),
             nul: EngineNul::default(),
             nonascii: EngineNonascii::default(),
-         }
+        }
     }
 }
 
@@ -179,9 +180,12 @@ impl Engines {
     }
     fn result(self) -> Metrics {
         Metrics {
-            sha2: self.sha2.map(|e| HashSum(Vec::from(e.finalize_fixed().as_slice()))),
-            blake2b: self.blake2b.map(|e| HashSum(
-                Vec::from(e.finalize().as_slice()))),
+            sha2: self
+                .sha2
+                .map(|e| HashSum(Vec::from(e.finalize_fixed().as_slice()))),
+            blake2b: self
+                .blake2b
+                .map(|e| HashSum(Vec::from(e.finalize().as_slice()))),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
@@ -197,13 +201,19 @@ fn compute_metrics(path: impl AsRef<Path>, features: Features) -> Result<Metrics
     let mut buffer = [0; 4096];
     loop {
         let n = f.read(&mut buffer[..])?;
-        if n == 0 { break }
+        if n == 0 {
+            break;
+        }
         engines.input(&buffer[0..n]);
     }
     Ok(engines.result())
 }
 
-trait BTreeMapExt<K, V> where K: Ord, V: Default {
+trait BTreeMapExt<K, V>
+where
+    K: Ord,
+    V: Default,
+{
     fn get_default(&mut self, key: K) -> &mut V;
 }
 
@@ -229,7 +239,8 @@ impl Entry {
             Entry::Directory(entries) => {
                 let mut components = path.components();
                 let count = components.clone().count();
-                let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
+                let first =
+                    Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
                 let rest = components.as_path().to_owned();
                 if count > 1 {
                     let subentry = entries.get_default(first);
@@ -241,7 +252,7 @@ impl Entry {
                     }
                 }
             }
-            Entry::File(_) => unreachable!()
+            Entry::File(_) => unreachable!(),
         }
     }
 
@@ -250,16 +261,18 @@ impl Entry {
             Entry::Directory(entries) => {
                 let mut components = path.components();
                 let count = components.clone().count();
-                let first = Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
+                let first =
+                    Path::new(components.next().expect("unreachable").as_os_str()).to_owned();
                 let rest = components.as_path().to_owned();
                 if count > 1 {
-                    entries.get(&first).and_then(
-                        |subentry| subentry.lookup(&rest))
+                    entries
+                        .get(&first)
+                        .and_then(|subentry| subentry.lookup(&rest))
                 } else {
                     entries.get(&first)
                 }
             }
-            Entry::File(_) => unreachable!()
+            Entry::File(_) => unreachable!(),
         }
     }
 }
@@ -299,51 +312,52 @@ impl EntryDiff {
         match self {
             EntryDiff::Directory(entries, diff) => {
                 if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
-                    println!("{}{}: {} changed, {} added, {} removed, {} unchanged",
-                             "| ".repeat(depth),
-                             path.display(),
-                             diff.changed,
-                             diff.added,
-                             diff.removed,
-                             diff.unchanged);
+                    println!(
+                        "{}{}: {} changed, {} added, {} removed, {} unchanged",
+                        "| ".repeat(depth),
+                        path.display(),
+                        diff.changed,
+                        diff.added,
+                        diff.removed,
+                        diff.unchanged
+                    );
                     for (key, entry) in entries.iter() {
-                        entry.show_diff(key, depth+1);
+                        entry.show_diff(key, depth + 1);
                     }
                 }
             }
             EntryDiff::File(diff) => {
                 if diff.zeroed || diff.changed_nul || diff.changed_nonascii {
-                    println!("{}{} changed",
-                             "| ".repeat(depth),
-                             path.display());
+                    println!("{}{} changed", "| ".repeat(depth), path.display());
                     if diff.zeroed {
-                        println!("{}> suspicious: file was truncated",
-                                 "##".repeat(depth));
+                        println!("{}> suspicious: file was truncated", "##".repeat(depth));
                     }
                     if diff.changed_nul {
-                        println!("{}> suspicious: original had no NUL bytes, but now does",
-                                 "##".repeat(depth));
+                        println!(
+                            "{}> suspicious: original had no NUL bytes, but now does",
+                            "##".repeat(depth)
+                        );
                     }
                     if diff.changed_nonascii {
-                        println!("{}> suspicious: original had no non-ASCII bytes, but now does",
-                                 "##".repeat(depth));
+                        println!(
+                            "{}> suspicious: original had no non-ASCII bytes, but now does",
+                            "##".repeat(depth)
+                        );
                     }
                 }
             }
-            EntryDiff::KindChanged => {
-            }
+            EntryDiff::KindChanged => {}
         }
     }
 
     fn summarize_diff(&self) -> DiffSummary {
         match self {
             EntryDiff::Directory(entries, diff) => {
-                let initial =
-                    if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
-                        DiffSummary::Changes
-                    } else {
-                        DiffSummary::NoChanges
-                    };
+                let initial = if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
+                    DiffSummary::Changes
+                } else {
+                    DiffSummary::NoChanges
+                };
                 entries
                     .values()
                     .map(|x| x.summarize_diff())
@@ -358,9 +372,7 @@ impl EntryDiff {
                     DiffSummary::NoChanges
                 }
             }
-            EntryDiff::KindChanged => {
-                DiffSummary::Changes
-            }
+            EntryDiff::KindChanged => DiffSummary::Changes,
         }
     }
 }
@@ -433,29 +445,35 @@ impl Entry {
                 added += new_iter.count() as u64;
                 EntryDiff::Directory(
                     entries,
-                    DirectoryDiff { added, removed, changed, unchanged })
-            },
+                    DirectoryDiff {
+                        added,
+                        removed,
+                        changed,
+                        unchanged,
+                    },
+                )
+            }
             (Entry::File(old), Entry::File(new)) => {
                 let changed = old.size != new.size;
-                let changed = changed ||
-                    (old.sha2.is_some() && new.sha2.is_some() && old.sha2 != new.sha2);
-                let changed = changed ||
-                    (old.blake2b.is_some() && new.blake2b.is_some() && old.blake2b != new.blake2b);
-                EntryDiff::File(
-                    MetricsDiff {
-                        changed_content: changed,
-                        zeroed: old.size > 0 && new.size == 0,
-                        changed_nul: old.nul != new.nul,
-                        changed_nonascii: old.nonascii != new.nonascii,
-                    }
-                )
-            },
+                let changed =
+                    changed || (old.sha2.is_some() && new.sha2.is_some() && old.sha2 != new.sha2);
+                let changed = changed
+                    || (old.blake2b.is_some()
+                        && new.blake2b.is_some()
+                        && old.blake2b != new.blake2b);
+                EntryDiff::File(MetricsDiff {
+                    changed_content: changed,
+                    zeroed: old.size > 0 && new.size == 0,
+                    changed_nul: old.nul != new.nul,
+                    changed_nonascii: old.nonascii != new.nonascii,
+                })
+            }
             (_, _) => EntryDiff::KindChanged,
         }
     }
 }
 
-const SEP : u8 = 0x0a; // separator \n (byte 0x0a) used in JSON encoding
+const SEP: u8 = 0x0a; // separator \n (byte 0x0a) used in JSON encoding
 
 impl Database {
     fn insert(&mut self, path: PathBuf, entry: Entry) {
@@ -482,26 +500,32 @@ impl Database {
 
         let parallel = threads > 1;
         if parallel {
-            WalkBuilder::new(&root).threads(threads).build_parallel().run(|| {
-                let total_bytes = total_bytes.clone();
-                let database = database.clone();
-                let root = root.as_ref().to_owned();
-                Box::new(move |entry| {
-                    let entry = entry.unwrap(); // ?
-                    if entry.file_type().map_or(false, |t| t.is_file()) {
-                        let metrics = compute_metrics(entry.path(), features).unwrap(); // ?
-                        *total_bytes.lock().unwrap() += metrics.size;
-                        let result = Entry::File(metrics);
-                        let short_path = if entry.path() == root {
-                            Path::new(entry.path().file_name().expect("unreachable"))
-                        } else {
-                            entry.path().strip_prefix(&root).unwrap() // ?
-                        };
-                        database.lock().unwrap().insert(short_path.to_owned(), result);
-                    }
-                    WalkState::Continue
-                })
-            });
+            WalkBuilder::new(&root)
+                .threads(threads)
+                .build_parallel()
+                .run(|| {
+                    let total_bytes = total_bytes.clone();
+                    let database = database.clone();
+                    let root = root.as_ref().to_owned();
+                    Box::new(move |entry| {
+                        let entry = entry.unwrap(); // ?
+                        if entry.file_type().map_or(false, |t| t.is_file()) {
+                            let metrics = compute_metrics(entry.path(), features).unwrap(); // ?
+                            *total_bytes.lock().unwrap() += metrics.size;
+                            let result = Entry::File(metrics);
+                            let short_path = if entry.path() == root {
+                                Path::new(entry.path().file_name().expect("unreachable"))
+                            } else {
+                                entry.path().strip_prefix(&root).unwrap() // ?
+                            };
+                            database
+                                .lock()
+                                .unwrap()
+                                .insert(short_path.to_owned(), result);
+                        }
+                        WalkState::Continue
+                    })
+                });
         } else {
             let ref mut total_bytes = *total_bytes.lock().unwrap();
             let ref mut database = *database.lock().unwrap();
@@ -523,11 +547,13 @@ impl Database {
         let elapsed = start_time.elapsed().as_seconds_f64();
         if verbose {
             let total_bytes = *total_bytes.lock().unwrap();
-            println!("Database::build took {:.3} seconds on {} threads, read {} bytes, {:.1} MB/s",
-                     elapsed,
-                     threads,
-                     total_bytes,
-                     total_bytes as f64/elapsed/1e6);
+            println!(
+                "Database::build took {:.3} seconds on {} threads, read {} bytes, {:.1} MB/s",
+                elapsed,
+                threads,
+                total_bytes,
+                total_bytes as f64 / elapsed / 1e6
+            );
         }
         let ref database = *database.lock().unwrap();
         Ok(database.clone())
@@ -543,7 +569,7 @@ impl Database {
         &self,
         root: impl AsRef<Path>,
         features: Features,
-        threads: usize
+        threads: usize,
     ) -> Result<DiffSummary, error::Error> {
         // FIXME: This is non-interactive, but vastly more simple than
         // trying to implement the same functionality interactively.
@@ -566,13 +592,12 @@ impl Database {
         };
 
         // Decode expected checksums
-        let expected : DatabaseChecksum =
-            serde_json::from_slice(&bytes[..index])?;
+        let expected: DatabaseChecksum = serde_json::from_slice(&bytes[..index])?;
         let features = Features::infer_from_database_checksum(&expected);
 
         // Compute actual checksums of database
         let mut engines = Engines::new(features);
-        engines.input(&bytes[index+1..]);
+        engines.input(&bytes[index + 1..]);
         let actual: DatabaseChecksum = engines.result().into();
 
         if expected.diff(&actual) {
@@ -580,12 +605,12 @@ impl Database {
         }
 
         // Continue decoding database
-        Ok(serde_json::from_slice(&bytes[index+1..])?)
+        Ok(serde_json::from_slice(&bytes[index + 1..])?)
     }
 
     pub fn dump_json<W>(&self, w: W, features: Features) -> Result<W, error::Error>
     where
-        W: Write
+        W: Write,
     {
         // Important: The encoded JSON **must not** contain the separator,
         // or else the format will break
