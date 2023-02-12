@@ -119,12 +119,14 @@ fn parse_args() -> Action {
                 .about("Creates an integrity database from a directory")
                 .arg(
                     clap::Arg::with_name("database")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of integrity database to create")
                         .required(true)
                         .index(1),
                 )
                 .arg(
                     clap::Arg::with_name("path")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of file or directory to scan")
                         .required(true)
                         .index(2),
@@ -142,12 +144,14 @@ fn parse_args() -> Action {
                 .about("Check an integrity database against a directory")
                 .arg(
                     clap::Arg::with_name("database")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of integrity database to read")
                         .required(true)
                         .index(1),
                 )
                 .arg(
                     clap::Arg::with_name("path")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of file or directory to scan")
                         .required(true)
                         .index(2),
@@ -159,12 +163,14 @@ fn parse_args() -> Action {
                 .about("Compare two integrity databases")
                 .arg(
                     clap::Arg::with_name("old")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of old integrity database")
                         .required(true)
                         .index(1),
                 )
                 .arg(
                     clap::Arg::with_name("new")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of new integrity database")
                         .required(true)
                         .index(2),
@@ -175,6 +181,7 @@ fn parse_args() -> Action {
                 .about("Check the internal consistency of an integrity database")
                 .arg(
                     clap::Arg::with_name("database")
+                        .value_parser(value_parser!(OsString))
                         .help("Path of integrity database to read")
                         .required(true)
                         .index(1),
@@ -190,24 +197,33 @@ fn parse_args() -> Action {
         .get_matches();
     match matches.subcommand() {
         Some(("build", submatches)) => Action::Build {
-            db_path: submatches.value_of_os("database").unwrap().to_owned(),
-            dir_path: submatches.value_of_os("path").unwrap().to_owned(),
+            db_path: submatches
+                .get_one::<OsString>("database")
+                .unwrap()
+                .to_owned(),
+            dir_path: submatches.get_one::<OsString>("path").unwrap().to_owned(),
             features: parse_features(submatches),
             threads: parse_threads(submatches),
             force: submatches.is_present("force"),
         },
         Some(("check", submatches)) => Action::Check {
-            db_path: submatches.value_of_os("database").unwrap().to_owned(),
-            dir_path: submatches.value_of_os("path").unwrap().to_owned(),
+            db_path: submatches
+                .get_one::<OsString>("database")
+                .unwrap()
+                .to_owned(),
+            dir_path: submatches.get_one::<OsString>("path").unwrap().to_owned(),
             features: parse_features(submatches),
             threads: parse_threads(submatches),
         },
         Some(("diff", submatches)) => Action::Diff {
-            old_path: submatches.value_of_os("old").unwrap().to_owned(),
-            new_path: submatches.value_of_os("new").unwrap().to_owned(),
+            old_path: submatches.get_one::<OsString>("old").unwrap().to_owned(),
+            new_path: submatches.get_one::<OsString>("new").unwrap().to_owned(),
         },
         Some(("selfcheck", submatches)) => Action::SelfCheck {
-            db_path: submatches.value_of_os("database").unwrap().to_owned(),
+            db_path: submatches
+                .get_one::<OsString>("database")
+                .unwrap()
+                .to_owned(),
         },
         _ => unreachable!(),
     }
