@@ -32,9 +32,9 @@ base64 = "0.13"
 
 flate2 = "1.0"
 
-digest = "0.8"
-sha2 = "0.8"
-blake2 = "0.8"
+digest = "0.10"
+sha2 = "0.10"
+blake2 = "0.10"
 
 [dev-dependencies]
 criterion = "0.3"

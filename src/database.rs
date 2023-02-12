@@ -6,7 +6,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use digest::{Input, FixedOutput, VariableOutput};
+use digest::{FixedOutput, consts::U32, Digest};
 use ignore::{WalkBuilder, WalkState};
 use time;
 
@@ -16,11 +16,13 @@ use flate2::Compression;
 use flate2::read::GzDecoder;
 use flate2::write::GzEncoder;
 
-use sha2;
+use sha2::Sha512_256;
 use blake2;
 
 use crate::base64;
 use crate::error;
+
+type Blake2b32 = blake2::Blake2b<U32>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Features {
@@ -140,8 +142,8 @@ impl EngineNonascii {
 }
 
 struct Engines {
-    sha2: Option<sha2::Sha512Trunc256>,
-    blake2b: Option<blake2::VarBlake2b>,
+    sha2: Option<Sha512_256>,
+    blake2b: Option<Blake2b32>,
     size: EngineSize,
     nul: EngineNul,
     nonascii: EngineNonascii,
@@ -151,12 +153,12 @@ impl Engines {
     fn new(features: Features) -> Engines {
         Engines {
             sha2: if features.sha2 {
-                Some(sha2::Sha512Trunc256::default())
+                Some(Sha512_256::default())
             } else {
                 None
             },
             blake2b: if features.blake2b {
-                Some(blake2::VarBlake2b::new(32).unwrap())
+                Some(Blake2b32::new())
             } else {
                 None
             },
@@ -169,17 +171,17 @@ impl Engines {
 
 impl Engines {
     fn input(&mut self, input: &[u8]) {
-        self.sha2.iter_mut().for_each(|e| e.input(input));
-        self.blake2b.iter_mut().for_each(|e| e.input(input));
+        self.sha2.iter_mut().for_each(|e| e.update(input));
+        self.blake2b.iter_mut().for_each(|e| e.update(input));
         self.size.input(input);
         self.nul.input(input);
         self.nonascii.input(input);
     }
     fn result(self) -> Metrics {
         Metrics {
-            sha2: self.sha2.map(|e| HashSum(Vec::from(e.fixed_result().as_slice()))),
+            sha2: self.sha2.map(|e| HashSum(Vec::from(e.finalize_fixed().as_slice()))),
             blake2b: self.blake2b.map(|e| HashSum(
-                e.vec_result())),
+                Vec::from(e.finalize().as_slice()))),
             size: self.size.result(),
             nul: self.nul.result(),
             nonascii: self.nonascii.result(),
