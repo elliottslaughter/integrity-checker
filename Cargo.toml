@@ -37,7 +37,7 @@ sha2 = "0.10"
 blake2 = "0.10"
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.4"
 num_cpus = "1"
 tempfile = "3"
 valico = "3"
