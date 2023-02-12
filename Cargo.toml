@@ -21,7 +21,7 @@ default = []
 asm = ["sha2/asm"]
 
 [dependencies]
-clap = "2.33"
+clap = { version = "3", features = ["cargo"] }
 ignore = "0.4"
 time = "0.3"
 

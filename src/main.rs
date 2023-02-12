@@ -35,7 +35,7 @@ enum ActionSummary {
     Diff(DiffSummary),
 }
 
-fn validate_usize(s: String) -> Result<(), String> {
+fn validate_usize(s: &str) -> Result<(), String> {
     s.parse::<usize>().map(|_| ()).map_err(|e| e.to_string())
 }
 
@@ -43,12 +43,12 @@ trait DefaultFlags {
     fn add_default_flags(self) -> Self;
 }
 
-impl<'a, 'b> DefaultFlags for clap::App<'a, 'b> {
+impl<'a> DefaultFlags for clap::App<'a> {
     fn add_default_flags(self) -> Self {
         self
             .arg(clap::Arg::with_name("threads")
                  .help("Number of threads to use")
-                 .short("j").long("threads")
+                 .short('j').long("threads")
                  .takes_value(true)
                  .validator(validate_usize))
             .arg(clap::Arg::with_name("sha2")
@@ -115,7 +115,7 @@ fn parse_args() -> Action {
                          .index(2))
                     .arg(clap::Arg::with_name("force")
                          .help("Overwrite existing file")
-                         .short("f").long("force"))
+                         .short('f').long("force"))
                     .add_default_flags())
         .subcommand(clap::SubCommand::with_name("check")
                     .about("Check an integrity database against a directory")
@@ -151,24 +151,24 @@ fn parse_args() -> Action {
                     \n   -1       Error")
         .get_matches();
     match matches.subcommand() {
-        ("build", Some(submatches)) => Action::Build {
+        Some(("build", submatches)) => Action::Build {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
             dir_path: submatches.value_of_os("path").unwrap().to_owned(),
             features: parse_features(submatches),
             threads: parse_threads(submatches),
             force: submatches.is_present("force"),
         },
-        ("check", Some(submatches)) => Action::Check {
+        Some(("check", submatches)) => Action::Check {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
             dir_path: submatches.value_of_os("path").unwrap().to_owned(),
             features: parse_features(submatches),
             threads: parse_threads(submatches),
         },
-        ("diff", Some(submatches)) => Action::Diff {
+        Some(("diff", submatches)) => Action::Diff {
             old_path: submatches.value_of_os("old").unwrap().to_owned(),
             new_path: submatches.value_of_os("new").unwrap().to_owned(),
         },
-        ("selfcheck", Some(submatches)) => Action::SelfCheck {
+        Some(("selfcheck", submatches)) => Action::SelfCheck {
             db_path: submatches.value_of_os("database").unwrap().to_owned(),
         },
         _ => unreachable!(),
