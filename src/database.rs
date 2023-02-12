@@ -63,9 +63,7 @@ impl DatabaseChecksum {
         let changed = self.size != new.size;
         let changed =
             changed || (self.sha2.is_some() && new.sha2.is_some() && self.sha2 != new.sha2);
-        let changed = changed
-            || (self.blake2b.is_some() && new.blake2b.is_some() && self.blake2b != new.blake2b);
-        changed
+        changed || (self.blake2b.is_some() && new.blake2b.is_some() && self.blake2b != new.blake2b)
     }
 }
 
@@ -245,18 +243,15 @@ impl Entry {
                 if count > 1 {
                     let subentry = entries.get_default(first);
                     subentry.insert(rest, file);
-                } else {
-                    match entries.insert(first, file) {
-                        Some(_) => unreachable!(), // See above
-                        None => (),
-                    }
+                } else if entries.insert(first, file).is_some() {
+                    unreachable!(); // See above
                 }
             }
             Entry::File(_) => unreachable!(),
         }
     }
 
-    fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
+    fn lookup(&self, path: &Path) -> Option<&Entry> {
         match self {
             Entry::Directory(entries) => {
                 let mut components = path.components();
@@ -308,7 +303,7 @@ pub enum DiffSummary {
 }
 
 impl EntryDiff {
-    fn show_diff(&self, path: &PathBuf, depth: usize) {
+    fn show_diff(&self, path: &Path, depth: usize) {
         match self {
             EntryDiff::Directory(entries, diff) => {
                 if diff.changed > 0 || diff.added > 0 || diff.removed > 0 {
@@ -480,7 +475,7 @@ impl Database {
         self.0.insert(path, entry);
     }
 
-    pub fn lookup(&self, path: &PathBuf) -> Option<&Entry> {
+    pub fn lookup(&self, path: &Path) -> Option<&Entry> {
         self.0.lookup(path)
     }
 
@@ -527,8 +522,8 @@ impl Database {
                     })
                 });
         } else {
-            let ref mut total_bytes = *total_bytes.lock().unwrap();
-            let ref mut database = *database.lock().unwrap();
+            let total_bytes = &mut (*total_bytes.lock().unwrap());
+            let database = &mut (*database.lock().unwrap());
             for entry in WalkBuilder::new(&root).build() {
                 let entry = entry?;
                 if entry.file_type().map_or(false, |t| t.is_file()) {
@@ -555,13 +550,13 @@ impl Database {
                 total_bytes as f64 / elapsed / 1e6
             );
         }
-        let ref database = *database.lock().unwrap();
+        let database = &(*database.lock().unwrap());
         Ok(database.clone())
     }
 
     pub fn show_diff(&self, other: &Database) -> DiffSummary {
         let diff = self.diff(other);
-        diff.show_diff(&Path::new(".").to_owned(), 0);
+        diff.show_diff(Path::new("."), 0);
         diff.summarize_diff()
     }
 

@@ -13,6 +13,7 @@ rm -f db2.json
 # Basic tests
 cargo check $FEATURES
 cargo fmt --all -- --check
+cargo clippy $FEATURES -- -D warnings -W clippy::all
 cargo build $FEATURES
 cargo test $FEATURES
 cargo bench $FEATURES

@@ -3,7 +3,6 @@ extern crate clap;
 
 use std::ffi::OsString;
 use std::fs::{File, OpenOptions};
-use std::io::{self, Write};
 
 use integrity_checker::database::{Database, DiffSummary, Features};
 use integrity_checker::error;
@@ -101,10 +100,7 @@ fn parse_features(matches: &clap::ArgMatches) -> Features {
         defaults.blake2b
     };
 
-    Features {
-        sha2: sha2,
-        blake2b: blake2b,
-    }
+    Features { sha2, blake2b }
 }
 
 fn parse_threads(matches: &clap::ArgMatches) -> usize {
@@ -233,9 +229,9 @@ fn driver() -> Result<ActionSummary, error::Error> {
                 .create(true)
                 .truncate(true)
                 .create_new(!force)
-                .open(&db_path)?;
+                .open(db_path)?;
 
-            let database = Database::build(&dir_path, features, threads, true)?;
+            let database = Database::build(dir_path, features, threads, true)?;
             database.dump_json(f, features)?;
 
             Ok(ActionSummary::Built)
@@ -246,21 +242,21 @@ fn driver() -> Result<ActionSummary, error::Error> {
             features,
             threads,
         } => {
-            let f = File::open(&db_path)?;
+            let f = File::open(db_path)?;
             let database = Database::load_json(f)?;
             Ok(ActionSummary::Diff(
-                database.check(&dir_path, features, threads)?,
+                database.check(dir_path, features, threads)?,
             ))
         }
         Action::Diff { old_path, new_path } => {
-            let f_old = File::open(&old_path)?;
-            let f_new = File::open(&new_path)?;
+            let f_old = File::open(old_path)?;
+            let f_new = File::open(new_path)?;
             let old = Database::load_json(f_old)?;
             let new = Database::load_json(f_new)?;
             Ok(ActionSummary::Diff(old.show_diff(&new)))
         }
         Action::SelfCheck { db_path } => {
-            let f = File::open(&db_path)?;
+            let f = File::open(db_path)?;
             Database::load_json(f)?;
             Ok(ActionSummary::Diff(DiffSummary::NoChanges))
         }
@@ -276,7 +272,7 @@ fn main() {
             ActionSummary::Diff(DiffSummary::Suspicious) => 2,
         },
         Err(err) => {
-            writeln!(io::stderr(), "error: {:?}", err).unwrap();
+            eprintln!("error: {:?}", err);
             -1
         }
     });
