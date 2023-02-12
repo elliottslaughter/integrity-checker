@@ -11,7 +11,8 @@ rm -f db.json.gz db2.json.gz
 rm -f db2.json
 
 # Basic tests
-# cargo +nightly fmt -- --write-mode=diff
+cargo check $FEATURES
+cargo fmt --all -- --check
 cargo build $FEATURES
 cargo test $FEATURES
 cargo bench $FEATURES
