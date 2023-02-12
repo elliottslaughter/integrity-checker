@@ -5,7 +5,7 @@ use std::process::Command;
 
 use integrity_checker::database::{Database, Features};
 
-use criterion::{Benchmark, Criterion};
+use criterion::Criterion;
 
 use tempfile::tempdir;
 
@@ -34,13 +34,12 @@ fn build(c: &mut Criterion) {
 
     let n = num_cpus::get();
     println!("Running benchmark on {} cores", n);
-    c.bench(
-        "build",
-        Benchmark::new("linux", move |b| {
-            b.iter(|| Database::build(&test_dir, Features::default(), n, false))
-        })
-        .sample_size(10),
-    );
+    let mut g = c.benchmark_group("build");
+    g.sample_size(10);
+    g.bench_function("linux", move |b| {
+        b.iter(|| Database::build(&test_dir, Features::default(), n, false))
+    });
+    g.finish();
 }
 
 criterion_group!(benches, build);
