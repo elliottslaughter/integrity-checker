@@ -1,6 +1,6 @@
 [package]
 name = "integrity-checker"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Elliott Slaughter <elliottslaughter@gmail.com>"]
 description = "integrity checker for backups and filesystems"
 documentation = "https://github.com/elliottslaughter/integrity-checker"
